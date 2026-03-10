@@ -102,6 +102,8 @@ const App = () => {
         <LanguageProvider>
           <DataProvider>
             <Routes>
+              {/* Redirect root to machine profiles */}
+              <Route path="/" element={<Navigate to="/machineProfiles" replace />} />
               {/* Machine Profiles */}
               <Route path="/machineProfiles" element={<MainLayout><MachineProfiles /></MainLayout>} />
               <Route path="/machineProfiles/:machineId" element={<MainLayout><MachineProfileDetail /></MainLayout>} />
