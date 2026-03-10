@@ -28,6 +28,12 @@ import {
   ArrowRight,
   Home,
   BarChart2,
+  DollarSign,
+  Shield,
+  Star,
+  Monitor,
+  Zap,
+  Layers,
 } from 'lucide-react';
 
 // Saudi Cable Logo Component (Cable Cross-Section Design - 7 Conductors)
@@ -44,48 +50,20 @@ const SaudiCableLogo = ({ size = 48 }) => (
   </svg>
 );
 
-// Department definitions with their pages
-const departmentMenus = {
-  production: {
-    color: '#10B981',
-    items: [
-      { id: 'home', icon: Home, path: '/' },
-      { id: 'factoryLayout', icon: Map, path: '/factoryLayout' },
-      { id: 'shopFloor', icon: Factory, path: '/shopFloor' },
-      { id: 'capacityPlanning', icon: BarChart3, path: '/capacityPlanning' },
-      { id: 'scheduling', icon: Calendar, path: '/scheduling' },
-    ],
-  },
-  maintenance: {
-    color: '#F39200',
-    items: [
-      { id: 'maintenanceDashboard', icon: Wrench, path: '/maintenanceDashboard' },
-      { id: 'machineManagement', icon: Database, path: '/machineManagement' },
-      { id: 'machineProfiles', icon: BarChart2, path: '/machineProfiles' },
-      { id: 'maintenanceChecklist', icon: ClipboardList, path: '/maintenanceChecklist' },
-      { id: 'pmSchedule', icon: CalendarDays, path: '/pmSchedule' },
-    ],
-  },
-  planning: {
-    color: '#3B82F6',
-    items: [
-      { id: 'analytics', icon: LayoutDashboard, path: '/analytics' },
-      { id: 'qualityControl', icon: CheckCircle, path: '/qualityControl' },
-      { id: 'scrapManagement', icon: Trash2, path: '/scrapManagement' },
-      { id: 'workforceManagement', icon: Users, path: '/workforceManagement' },
-    ],
-  },
-};
+// Navigation menu structure - focused on machine profiles
+const mainMenuItems = [
+  { id: 'dashboard', icon: Zap, path: '/', color: '#F39200', matchFn: (p) => p === '/' },
+  { id: 'machineProfiles', icon: Layers, path: '/machineProfiles', color: '#F39200', matchFn: (p) => p.startsWith('/machineProfiles') },
+];
 
-// Determine which department owns the current route
-const getDepartmentForPath = (path) => {
-  for (const [deptId, dept] of Object.entries(departmentMenus)) {
-    if (dept.items.some((item) => item.path === path)) {
-      return deptId;
-    }
-  }
-  return null;
-};
+const deptMenuItems = [
+  { id: 'dept_maintenance', icon: Wrench,     path: '/dept/maintenance', color: '#F39200',  en: 'Maintenance', ar: 'الصيانة',        matchFn: (p) => p === '/dept/maintenance' },
+  { id: 'dept_finance',     icon: DollarSign, path: '/dept/finance',     color: '#818CF8',  en: 'Finance',     ar: 'المالية',         matchFn: (p) => p === '/dept/finance' },
+  { id: 'dept_production',  icon: Factory,    path: '/dept/production',  color: '#34D399',  en: 'Production',  ar: 'الإنتاج',         matchFn: (p) => p === '/dept/production' },
+  { id: 'dept_hse',         icon: Shield,     path: '/dept/hse',         color: '#F87171',  en: 'HSE',         ar: 'الصحة والسلامة',  matchFn: (p) => p === '/dept/hse' },
+  { id: 'dept_quality',     icon: Star,       path: '/dept/quality',     color: '#60A5FA',  en: 'Quality',     ar: 'الجودة',          matchFn: (p) => p === '/dept/quality' },
+  { id: 'dept_it_sap',      icon: Monitor,    path: '/dept/it_sap',      color: '#A78BFA',  en: 'IT / SAP',    ar: 'IT / SAP',        matchFn: (p) => p === '/dept/it_sap' },
+];
 
 const Sidebar = () => {
   const { t, isRTL } = useLanguage();
@@ -95,7 +73,6 @@ const Sidebar = () => {
   const location = useLocation();
 
   const currentPath = location.pathname;
-  const currentDept = getDepartmentForPath(currentPath);
 
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
@@ -146,123 +123,89 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* Back to Departments Button */}
-      <div className="px-3 pt-3">
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => navigate('/departments')}
-          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all text-sm font-medium"
-          style={{
-            color: '#F39200',
-            background: isDark ? 'rgba(243, 146, 0, 0.1)' : 'rgba(243, 146, 0, 0.06)',
-            border: '1px solid rgba(243, 146, 0, 0.2)',
-          }}
-        >
-          <BackArrow className="w-4 h-4 flex-shrink-0" />
-          {!isCollapsed && (
-            <span>{isRTL ? 'الأقسام' : 'Departments'}</span>
-          )}
-        </motion.button>
-      </div>
+      {/* Navigation */}
+      <nav className="flex-1 py-4 overflow-y-auto space-y-1 px-3">
 
-      {/* Navigation - Grouped by Department */}
-      <nav className="flex-1 py-3 overflow-y-auto">
-        {Object.entries(departmentMenus).map(([deptId, dept]) => {
-          const isDeptActive = currentDept === deptId;
-
+        {/* Main Nav */}
+        {mainMenuItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = item.matchFn(currentPath);
           return (
-            <div key={deptId} className="mb-2">
-              {/* Department Header */}
-              {!isCollapsed && (
-                <div className="px-5 py-2 flex items-center gap-2">
-                  <div
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{ background: dept.color }}
-                  />
-                  <span
-                    className="text-[10px] font-bold uppercase tracking-wider"
-                    style={{ color: isDeptActive ? dept.color : colors.textMuted }}
-                  >
-                    {t(`departments.${deptId}`)}
-                  </span>
-                </div>
+            <motion.button
+              key={item.id}
+              whileHover={{ scale: 1.02, x: isRTL ? -3 : 3 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate(item.path)}
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200"
+              style={isActive ? {
+                background: `linear-gradient(135deg, ${item.color} 0%, ${item.color}CC 100%)`,
+                boxShadow: `0 4px 14px ${item.color}50`,
+                color: '#FFFFFF',
+              } : {
+                color: colors.textSecondary,
+                background: 'transparent',
+              }}
+              onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = `${item.color}20`; }}
+              onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+            >
+              <Icon className="w-5 h-5 flex-shrink-0" style={{ color: isActive ? '#FFFFFF' : colors.textMuted }} />
+              <AnimatePresence>
+                {!isCollapsed && (
+                  <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="text-sm font-medium whitespace-nowrap">
+                    {t(`nav.${item.id}`)}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.button>
+          );
+        })}
+
+        {/* Departments Section */}
+        {!isCollapsed && (
+          <div className="pt-3 pb-1 px-1">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600">
+              {isRTL ? 'الإدارات' : 'Departments'}
+            </span>
+          </div>
+        )}
+        {isCollapsed && <div className="my-3 mx-2 border-t border-white/10" />}
+
+        {deptMenuItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = item.matchFn(currentPath);
+          return (
+            <motion.button
+              key={item.id}
+              whileHover={{ scale: 1.02, x: isRTL ? -3 : 3 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate(item.path)}
+              title={isCollapsed ? (isRTL ? item.ar : item.en) : undefined}
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200"
+              style={isActive ? {
+                background: `linear-gradient(135deg, ${item.color} 0%, ${item.color}CC 100%)`,
+                boxShadow: `0 4px 14px ${item.color}50`,
+                color: '#FFFFFF',
+              } : {
+                color: colors.textSecondary,
+                background: 'transparent',
+              }}
+              onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = `${item.color}20`; }}
+              onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+            >
+              <Icon className="w-5 h-5 flex-shrink-0" style={{ color: isActive ? '#FFFFFF' : item.color, opacity: isActive ? 1 : 0.7 }} />
+              <AnimatePresence>
+                {!isCollapsed && (
+                  <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="text-sm font-medium whitespace-nowrap">
+                    {isRTL ? item.ar : item.en}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+              {isActive && !isCollapsed && (
+                <div className={`${isRTL ? 'mr-auto' : 'ml-auto'} w-2 h-2 rounded-full bg-white`} />
               )}
-
-              {/* Separator dot for collapsed */}
-              {isCollapsed && (
-                <div className="flex justify-center py-2">
-                  <div
-                    className="w-2 h-2 rounded-full"
-                    style={{ background: dept.color }}
-                  />
-                </div>
-              )}
-
-              {/* Menu Items */}
-              <ul className="space-y-0.5 px-3">
-                {dept.items.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = item.path === '/machineProfiles'
-                    ? currentPath.startsWith('/machineProfiles')
-                    : currentPath === item.path;
-
-                  return (
-                    <li key={item.id}>
-                      <motion.button
-                        whileHover={{ scale: 1.02, x: isRTL ? -4 : 4 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => navigate(item.path)}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200"
-                        style={isActive ? {
-                          background: `linear-gradient(135deg, ${dept.color} 0%, ${dept.color}CC 100%)`,
-                          boxShadow: `0 4px 14px ${dept.color}59`,
-                          color: '#FFFFFF',
-                        } : {
-                          color: colors.textSecondary,
-                          background: 'transparent',
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isActive) {
-                            e.currentTarget.style.background = isDark
-                              ? `${dept.color}20`
-                              : `${dept.color}10`;
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isActive) {
-                            e.currentTarget.style.background = 'transparent';
-                          }
-                        }}
-                      >
-                        <Icon
-                          className="w-5 h-5 flex-shrink-0"
-                          style={{ color: isActive ? '#FFFFFF' : colors.textMuted }}
-                        />
-                        <AnimatePresence>
-                          {!isCollapsed && (
-                            <motion.span
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              exit={{ opacity: 0 }}
-                              className="text-sm font-medium whitespace-nowrap"
-                            >
-                              {t(`nav.${item.id}`)}
-                            </motion.span>
-                          )}
-                        </AnimatePresence>
-                        {isActive && !isCollapsed && (
-                          <motion.div
-                            layoutId="activeIndicator"
-                            className={`${isRTL ? 'mr-auto' : 'ml-auto'} w-2 h-2 rounded-full bg-white`}
-                          />
-                        )}
-                      </motion.button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+            </motion.button>
           );
         })}
       </nav>

@@ -16,6 +16,8 @@ import DepartmentHome from './pages/DepartmentHome';
 import DisabledPage from './pages/DisabledPage';
 import MachineProfiles from './pages/MachineProfiles';
 import MachineProfileDetail from './pages/MachineProfileDetail';
+import Dashboard from './pages/Dashboard';
+import DepartmentWorkspace from './pages/DepartmentWorkspace';
 // import Home from './pages/Home';
 // import FactoryView from './pages/FactoryView';
 // import CapacityPlanning from './pages/CapacityPlanning';
@@ -67,6 +69,7 @@ const MainLayout = ({ children }) => {
       pmSchedule: t('nav.pmSchedule') || 'PM Schedule',
       machineProfiles: t('nav.machineProfiles') || 'Machine Profiles',
       settings: t('common.settings'),
+      dashboard: t('nav.dashboard') || 'Control Center',
     };
     return titles[path] || t('header.title');
   };
@@ -102,8 +105,10 @@ const App = () => {
         <LanguageProvider>
           <DataProvider>
             <Routes>
-              {/* Redirect root to machine profiles */}
-              <Route path="/" element={<Navigate to="/machineProfiles" replace />} />
+              {/* Dashboard - Main Control Center */}
+              <Route path="/" element={<MainLayout><Dashboard /></MainLayout>} />
+              {/* Department Workspaces */}
+              <Route path="/dept/:dimension" element={<MainLayout><DepartmentWorkspace /></MainLayout>} />
               {/* Machine Profiles */}
               <Route path="/machineProfiles" element={<MainLayout><MachineProfiles /></MainLayout>} />
               <Route path="/machineProfiles/:machineId" element={<MainLayout><MachineProfileDetail /></MainLayout>} />

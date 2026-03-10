@@ -46,7 +46,8 @@
     "machineManagement": "إدارة المكائن",
     "machineProfiles": "بروفايلات الآلات",
     "maintenanceChecklist": "شيك ليست الصيانة",
-    "pmSchedule": "جدول الصيانة السنوي"
+    "pmSchedule": "جدول الصيانة السنوي",
+    "dashboard": "مركز التحكم"
   },
   "header": {
     "title": "شركة الكابلات السعودية",

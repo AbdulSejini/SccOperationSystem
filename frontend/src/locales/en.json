@@ -46,7 +46,8 @@
     "machineManagement": "Machine Management",
     "machineProfiles": "Machine Profiles",
     "maintenanceChecklist": "Maintenance Checklist",
-    "pmSchedule": "PM Schedule"
+    "pmSchedule": "PM Schedule",
+    "dashboard": "Control Center"
   },
   "header": {
     "title": "Saudi Cable Company",
