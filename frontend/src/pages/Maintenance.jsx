@@ -21,6 +21,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 import {
   Wrench,
   AlertTriangle,
@@ -37,6 +38,11 @@ import {
   Cog,
   XCircle,
   DollarSign,
+  Database,
+  ClipboardList,
+  CalendarDays,
+  ChevronRight,
+  ChevronLeft,
 } from 'lucide-react';
 
 const COLORS = ['#10B981', '#F39200', '#EF4444', '#3B82F6', '#8B5CF6'];
@@ -44,9 +50,46 @@ const COLORS = ['#10B981', '#F39200', '#EF4444', '#3B82F6', '#8B5CF6'];
 const Maintenance = () => {
   const { t, isRTL } = useLanguage();
   const { isDark, colors } = useTheme();
-  const { machineStatusData, rainImpactData, maintenance } = useData();
+  const { machineStatusData, rainImpactData, maintenance, machines, employees } = useData();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [showAddTask, setShowAddTask] = useState(false);
+
+  const Arrow = isRTL ? ChevronLeft : ChevronRight;
+
+  // Quick access links to other maintenance pages
+  const quickLinks = [
+    {
+      id: 'machineManagement',
+      icon: Database,
+      path: '/machineManagement',
+      labelEn: 'Machine Management',
+      labelAr: 'إدارة المكائن',
+      descEn: 'View & manage all machines',
+      descAr: 'عرض وإدارة جميع المكائن',
+      color: '#F39200',
+    },
+    {
+      id: 'maintenanceChecklist',
+      icon: ClipboardList,
+      path: '/maintenanceChecklist',
+      labelEn: 'Maintenance Checklist',
+      labelAr: 'شيك ليست الصيانة',
+      descEn: 'PM checklists & inspections',
+      descAr: 'قوائم فحص الصيانة الوقائية',
+      color: '#10B981',
+    },
+    {
+      id: 'pmSchedule',
+      icon: CalendarDays,
+      path: '/pmSchedule',
+      labelEn: 'PM Annual Schedule',
+      labelAr: 'جدول الصيانة السنوي',
+      descEn: 'Annual preventive maintenance plan',
+      descAr: 'خطة الصيانة الوقائية السنوية',
+      color: '#3B82F6',
+    },
+  ];
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Activity },
@@ -74,10 +117,10 @@ const Maintenance = () => {
         className="flex items-center justify-between"
       >
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+          <h1 className="text-2xl font-bold" style={{ color: isDark ? '#FFFFFF' : '#1F2937' }}>
             {isRTL ? 'إدارة الصيانة' : 'Maintenance Management'}
           </h1>
-          <p style={{ color: colors.textSecondary }}>
+          <p style={{ color: isDark ? '#D1D5DB' : '#6B7280' }}>
             {isRTL ? 'حالة الآلات وأوامر العمل' : 'Machine Status & Work Orders'}
           </p>
         </div>
@@ -176,6 +219,49 @@ const Maintenance = () => {
         </motion.div>
       </motion.div>
 
+      {/* Quick Access Cards */}
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+      >
+        {quickLinks.map((link) => {
+          const Icon = link.icon;
+          return (
+            <motion.button
+              key={link.id}
+              variants={itemVariants}
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate(link.path)}
+              className="flex items-center gap-4 p-4 rounded-2xl transition-all text-left"
+              style={{
+                background: colors.bgCard,
+                border: `1px solid ${colors.border}`,
+                direction: isRTL ? 'rtl' : 'ltr',
+              }}
+            >
+              <div
+                className="p-3 rounded-xl flex-shrink-0"
+                style={{ background: `${link.color}20` }}
+              >
+                <Icon className="w-6 h-6" style={{ color: link.color }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
+                  {isRTL ? link.labelAr : link.labelEn}
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: colors.textMuted }}>
+                  {isRTL ? link.descAr : link.descEn}
+                </p>
+              </div>
+              <Arrow className="w-5 h-5 flex-shrink-0" style={{ color: colors.textMuted }} />
+            </motion.button>
+          );
+        })}
+      </motion.div>
+
       {/* Tab Navigation */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -251,6 +337,8 @@ const Maintenance = () => {
             onClose={() => setShowAddTask(false)}
             colors={colors}
             isDark={isDark}
+            machines={machines}
+            employees={employees}
           />
         )}
       </AnimatePresence>
@@ -482,27 +570,26 @@ const RainImpactTab = ({ rainImpactData, colors, isDark }) => {
         animate={{ opacity: 1, y: 0 }}
         className="rounded-2xl p-6"
         style={{
-          background: isDark
-            ? 'linear-gradient(135deg, rgba(59,130,246,0.2), rgba(29,78,216,0.2))'
-            : 'linear-gradient(135deg, rgba(59,130,246,0.1), rgba(29,78,216,0.1))',
-          border: '1px solid rgba(59,130,246,0.3)'
+          background: 'linear-gradient(135deg, #60A5FA, #3B82F6)',
+          border: '1px solid rgba(96,165,250,0.5)',
+          boxShadow: '0 4px 20px rgba(59,130,246,0.3)',
         }}
       >
         <div className="flex items-start gap-4">
-          <div className="p-3 rounded-xl bg-blue-500/20">
-            <CloudRain className="w-8 h-8 text-blue-500" />
+          <div className="p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.2)' }}>
+            <CloudRain className="w-8 h-8 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold" style={{ color: colors.textPrimary }}>
+            <h3 className="text-lg font-bold text-white">
               Rain Impact Report - {rainImpactData.affectedArea}
             </h3>
-            <p style={{ color: colors.textSecondary }} className="mt-1">
-              <span className="font-medium">Reason:</span> {rainImpactData.reason}
+            <p className="text-white/90 mt-1">
+              <span className="font-semibold">Reason:</span> {rainImpactData.reason}
             </p>
-            <p style={{ color: colors.textSecondary }} className="mt-1">
-              <span className="font-medium">Root Cause:</span> {rainImpactData.rootCause}
+            <p className="text-white/90 mt-1">
+              <span className="font-semibold">Root Cause:</span> {rainImpactData.rootCause}
             </p>
-            <p className="text-sm mt-2" style={{ color: colors.textMuted }}>
+            <p className="text-sm mt-2 text-white/70">
               Report Date: {rainImpactData.reportDate}
             </p>
           </div>
@@ -714,7 +801,7 @@ const WorkOrdersTab = ({ maintenance, colors, isDark }) => {
 };
 
 // Add Task Modal
-const AddTaskModal = ({ onClose, colors, isDark }) => {
+const AddTaskModal = ({ onClose, colors, isDark, machines, employees = [] }) => {
   const [formData, setFormData] = useState({
     machine: '',
     type: 'preventive',
@@ -722,6 +809,8 @@ const AddTaskModal = ({ onClose, colors, isDark }) => {
     priority: 'medium',
     assignee: '',
   });
+
+  const machineIds = machines ? Object.keys(machines).sort() : [];
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -756,15 +845,20 @@ const AddTaskModal = ({ onClose, colors, isDark }) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm mb-2" style={{ color: colors.textSecondary }}>Machine ID</label>
-            <input
-              type="text"
+            <select
               value={formData.machine}
               onChange={(e) => setFormData({ ...formData, machine: e.target.value })}
               className="w-full px-4 py-2 rounded-lg"
               style={{ background: colors.bgTertiary, border: `1px solid ${colors.border}`, color: colors.textPrimary }}
-              placeholder="e.g., DT-1, XL-2"
               required
-            />
+            >
+              <option value="">-- Select Machine --</option>
+              {machineIds.map((id) => (
+                <option key={id} value={id}>
+                  {id} {machines[id]?.name ? `- ${machines[id].name}` : ''}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-sm mb-2" style={{ color: colors.textSecondary }}>Task Type</label>
@@ -806,14 +900,21 @@ const AddTaskModal = ({ onClose, colors, isDark }) => {
             </div>
             <div>
               <label className="block text-sm mb-2" style={{ color: colors.textSecondary }}>Assignee</label>
-              <input
-                type="text"
+              <select
                 value={formData.assignee}
                 onChange={(e) => setFormData({ ...formData, assignee: e.target.value })}
                 className="w-full px-4 py-2 rounded-lg"
                 style={{ background: colors.bgTertiary, border: `1px solid ${colors.border}`, color: colors.textPrimary }}
-                placeholder="Team name"
-              />
+              >
+                <option value="">-- Select Assignee --</option>
+                {employees
+                  .filter(emp => emp.status === 'active' && emp.department === 'maintenance')
+                  .map(emp => (
+                    <option key={emp.id || emp.employee_id} value={emp.name_en}>
+                      {emp.employee_id} - {emp.name_en}
+                    </option>
+                  ))}
+              </select>
             </div>
           </div>
 

@@ -1,4 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { fetchMachines as fetchMachinesFromDB, addMachine as addMachineDB, updateMachine as updateMachineDB, deleteMachine as deleteMachineDB, fetchMachineTypes as fetchTypesDB } from '../services/supabaseMachineService';
+import { fetchSparePartsByMachine, addSparePart as addSparePartDB, updateSparePart as updateSparePartDB, deleteSparePart as deleteSparePartDB } from '../services/sparePartsService';
+import { fetchEmployees as fetchEmployeesFromDB, addEmployee as addEmployeeDB, updateEmployee as updateEmployeeDB, deleteEmployee as deleteEmployeeDB } from '../services/employeeService';
+import { isSupabaseConfigured } from '../lib/supabase';
 
 const DataContext = createContext();
 
@@ -10,64 +14,115 @@ export const useData = () => {
   return context;
 };
 
-// Initial machine data based on factory layout - Real Saudi Cable Factory Data
+// Initial machine data - Authoritative source: Description of machine.xlsx (91 machines)
 const initialMachines = {
-  // ========== LV CABLE SECTION - PCP-1 (6 Machines) ==========
-  'DT-1': { id: 'DT-1', name: 'Drawing Unit 1', area: 'PCP-1', section: 'LV-Cable', type: 'drawing', status: 'running', speed: 28.5, targetSpeed: 32, temperature: 45, oee: 78, operator: 'Ahmed Ali' },
-  'DT-2': { id: 'DT-2', name: 'Drawing Unit 2', area: 'PCP-1', section: 'LV-Cable', type: 'drawing', status: 'running', speed: 30.2, targetSpeed: 32, temperature: 43, oee: 82, operator: 'Mohammed Hassan' },
-  'DT-4': { id: 'DT-4', name: 'Drawing Unit 4', area: 'PCP-1', section: 'LV-Cable', type: 'drawing', status: 'idle', speed: 0, targetSpeed: 32, temperature: 25, oee: 0, operator: null },
-  'BC-1': { id: 'BC-1', name: 'Bunching 1', area: 'PCP-1', section: 'LV-Cable', type: 'bunching', status: 'running', speed: 850, targetSpeed: 900, temperature: 38, oee: 75, operator: 'Khalid Omar' },
-  'BC-2': { id: 'BC-2', name: 'Bunching 2', area: 'PCP-1', section: 'LV-Cable', type: 'bunching', status: 'maintenance', speed: 0, targetSpeed: 900, temperature: 25, oee: 0, operator: null },
-  'AR-2': { id: 'AR-2', name: 'Armoring 2', area: 'PCP-1', section: 'LV-Cable', type: 'armoring', status: 'running', speed: 15.5, targetSpeed: 18, temperature: 42, oee: 71, operator: 'Saeed Ahmed' },
+  // ========== DRW-STR SECTION (Drawing & Stranding) - 24 machines ==========
+  'IW-5': { id: 'IW-5', name: 'Copper Intermediate Drawing Line IW-5', area: 'PCP-1', section: 'DRW-STR', type: 'drawing', status: 'running', speed: 28, targetSpeed: 32, temperature: 45, oee: 78, operator: null, description: 'Copper Intermediate Drawing Line IW-5 (NEIHOFF)', manufacturer: 'NEIHOFF', country_of_origin: 'Germany', installed_date: '2007-11-30' },
+  'IW-6': { id: 'IW-6', name: 'Copper Intermediate Drawing Line IW-6', area: 'PCP-1', section: 'DRW-STR', type: 'drawing', status: 'running', speed: 27, targetSpeed: 32, temperature: 44, oee: 80, operator: null, description: 'Copper Intermediate Drawing Line IW-6 (NEIHOFF)', manufacturer: 'NEIHOFF', country_of_origin: 'Germany', installed_date: '2010-09-27' },
+  'CL-3': { id: 'CL-3', name: 'Stranding Line CL-3', area: 'PCP-1', section: 'DRW-STR', type: 'stranding', status: 'running', speed: 35, targetSpeed: 40, temperature: 38, oee: 75, operator: null, description: 'Stranding Line CL-3 (SETIC)', manufacturer: 'SETIC', country_of_origin: 'France', installed_date: '2002-06-01' },
+  'CL-4': { id: 'CL-4', name: 'Stranding Line CL-4', area: 'PCP-1', section: 'DRW-STR', type: 'stranding', status: 'running', speed: 36, targetSpeed: 40, temperature: 39, oee: 78, operator: null, description: 'Stranding Line CL-4 (SETIC)', manufacturer: 'SETIC', country_of_origin: 'France', installed_date: '2012-12-30' },
+  'CL-5': { id: 'CL-5', name: 'Stranding Line CL-5', area: 'PCP-1', section: 'DRW-STR', type: 'stranding', status: 'running', speed: 37, targetSpeed: 40, temperature: 38, oee: 76, operator: null, description: 'Stranding Line CL-5 (SETIC)', manufacturer: 'SETIC', country_of_origin: 'France', installed_date: '2012-12-30' },
+  'BN-10': { id: 'BN-10', name: 'Bunching Stranding Line BN-10', area: 'PCP-1', section: 'DRW-STR', type: 'stranding', status: 'running', speed: 850, targetSpeed: 900, temperature: 38, oee: 82, operator: null, description: 'Bunching Stranding Line BN-10 (NEIHOFF)', manufacturer: 'NEIHOFF', country_of_origin: 'Germany', installed_date: '2010-09-27' },
+  'BN-11': { id: 'BN-11', name: 'Bunching Stranding Line BN-11', area: 'PCP-1', section: 'DRW-STR', type: 'stranding', status: 'running', speed: 840, targetSpeed: 900, temperature: 37, oee: 80, operator: null, description: 'Bunching Stranding Line BN-11 (NEIHOFF)', manufacturer: 'NEIHOFF', country_of_origin: 'Germany', installed_date: '2010-09-28' },
+  'BN-12': { id: 'BN-12', name: 'Bunching Stranding Line BN-12', area: 'PCP-1', section: 'DRW-STR', type: 'stranding', status: 'running', speed: 830, targetSpeed: 900, temperature: 36, oee: 79, operator: null, description: 'Bunching Stranding Line BN-12 (NEIHOFF)', manufacturer: 'NEIHOFF', country_of_origin: 'Germany', installed_date: '2010-09-27' },
+  'BN-7': { id: 'BN-7', name: 'Bunching Stranding Line BN-7', area: 'PCP-1', section: 'DRW-STR', type: 'stranding', status: 'running', speed: 860, targetSpeed: 900, temperature: 38, oee: 83, operator: null, description: 'Bunching Stranding Line BN-7 (NEIHOFF)', manufacturer: 'NEIHOFF', country_of_origin: 'Germany', installed_date: '2010-09-27' },
+  'BN-8': { id: 'BN-8', name: 'Bunching Stranding Line BN-8', area: 'PCP-1', section: 'DRW-STR', type: 'stranding', status: 'running', speed: 845, targetSpeed: 900, temperature: 37, oee: 81, operator: null, description: 'Bunching Stranding Line BN-8 (NEIHOFF)', manufacturer: 'NEIHOFF', country_of_origin: 'Germany', installed_date: '2010-09-27' },
+  'BN-9': { id: 'BN-9', name: 'Bunching Stranding Line BN-9', area: 'PCP-1', section: 'DRW-STR', type: 'stranding', status: 'running', speed: 855, targetSpeed: 900, temperature: 38, oee: 82, operator: null, description: 'Bunching Stranding Line BN-9 (NEIHOFF)', manufacturer: 'NEIHOFF', country_of_origin: 'Germany', installed_date: '2010-09-27' },
+  'CW-2': { id: 'CW-2', name: 'Copper and Aluminum Drawing Line CW-2', area: 'PCP-1', section: 'DRW-STR', type: 'drawing', status: 'running', speed: 30, targetSpeed: 32, temperature: 43, oee: 78, operator: null, description: 'Copper and Aluminum Drawing Line CW-2 (NEIHOFF)', manufacturer: 'NEIHOFF', country_of_origin: 'Germany', installed_date: '1979-02-01' },
+  'CW-3': { id: 'CW-3', name: 'Aluminum Drawing Line CW-3', area: 'PCP-1', section: 'DRW-STR', type: 'drawing', status: 'running', speed: 29, targetSpeed: 32, temperature: 42, oee: 76, operator: null, description: 'Aluminum Drawing Line CW-3 (NEIHOFF)', manufacturer: 'NEIHOFF', country_of_origin: 'Germany', installed_date: '1982-09-01' },
+  'CW-4': { id: 'CW-4', name: 'Copper and Aluminum Drawing Line CW-4', area: 'PCP-1', section: 'DRW-STR', type: 'drawing', status: 'running', speed: 31, targetSpeed: 32, temperature: 44, oee: 80, operator: null, description: 'Copper and Aluminum Drawing Line CW-4 (NEIHOFF)', manufacturer: 'NEIHOFF', country_of_origin: 'Germany', installed_date: '1983-01-01' },
+  'CW-5': { id: 'CW-5', name: 'Copper Drawing Line CW-5', area: 'PCP-1', section: 'DRW-STR', type: 'drawing', status: 'running', speed: 30, targetSpeed: 32, temperature: 43, oee: 79, operator: null, description: 'Copper Drawing Line CW-5 (NEIHOFF)', manufacturer: 'NEIHOFF', country_of_origin: 'Germany', installed_date: '1983-10-01' },
+  'CW-6': { id: 'CW-6', name: 'Copper and Aluminum Drawing Line CW-6', area: 'PCP-1', section: 'DRW-STR', type: 'drawing', status: 'running', speed: 29, targetSpeed: 32, temperature: 42, oee: 77, operator: null, description: 'Copper and Aluminum Drawing Line CW-6 (NEIHOFF)', manufacturer: 'NEIHOFF', country_of_origin: 'Germany', installed_date: '2009-08-31' },
+  'CW-7': { id: 'CW-7', name: 'Copper Drawing Line CW-7', area: 'PCP-1', section: 'DRW-STR', type: 'drawing', status: 'running', speed: 31, targetSpeed: 32, temperature: 44, oee: 82, operator: null, description: 'Copper Drawing Line CW-7 (NEIHOFF)', manufacturer: 'NEIHOFF', country_of_origin: 'Germany', installed_date: '2010-09-29' },
+  'ST-3': { id: 'ST-3', name: 'Stranding Line ST-3', area: 'PCP-1', section: 'DRW-STR', type: 'stranding', status: 'running', speed: 42, targetSpeed: 50, temperature: 36, oee: 78, operator: null, description: 'Stranding Line ST-3 (STOLBERGER)', manufacturer: 'STOLBERGER', country_of_origin: 'Germany', installed_date: '1982-11-01' },
+  'ST-4': { id: 'ST-4', name: 'Stranding Line ST-4', area: 'PCP-1', section: 'DRW-STR', type: 'stranding', status: 'running', speed: 44, targetSpeed: 50, temperature: 37, oee: 80, operator: null, description: 'Stranding Line ST-4 (STOLBERGER)', manufacturer: 'STOLBERGER', country_of_origin: 'Germany', installed_date: '1984-12-01' },
+  'ST-5': { id: 'ST-5', name: 'Stranding Line ST-5', area: 'PCP-1', section: 'DRW-STR', type: 'stranding', status: 'running', speed: 45, targetSpeed: 50, temperature: 36, oee: 82, operator: null, description: 'Stranding Line ST-5 (SKET)', manufacturer: 'SKET', country_of_origin: 'Germany', installed_date: '2008-08-31' },
+  'ST-6': { id: 'ST-6', name: 'Stranding Line ST-6', area: 'PCP-1', section: 'DRW-STR', type: 'stranding', status: 'running', speed: 46, targetSpeed: 50, temperature: 37, oee: 83, operator: null, description: 'Stranding Line ST-6 (SKET)', manufacturer: 'SKET', country_of_origin: 'Germany', installed_date: '2011-06-27' },
+  'TU-1': { id: 'TU-1', name: 'Stranding Line TU-1', area: 'PCP-1', section: 'DRW-STR', type: 'stranding', status: 'running', speed: 43, targetSpeed: 50, temperature: 35, oee: 79, operator: null, description: 'Stranding Line TU-1 (STOLBERGER)', manufacturer: 'STOLBERGER', country_of_origin: 'Germany', installed_date: '1980-12-01' },
+  'TP-1': { id: 'TP-1', name: 'Electrolytic tin plating Machine', area: 'PCP-1', section: 'DRW-STR', type: 'plating', status: 'running', speed: 20, targetSpeed: 25, temperature: 60, oee: 85, operator: null, description: 'Electrolytic tin plating Machine', manufacturer: 'ATOMEC', country_of_origin: 'Italy', installed_date: '2020-12-31' },
+  'DRW-1': { id: 'DRW-1', name: 'Drawing Machine - Niehoff', area: 'PCP-1', section: 'DRW-STR', type: 'drawing', status: 'running', speed: 28, targetSpeed: 32, temperature: 45, oee: 76, operator: null, description: 'Drawing Machine - Niehoff', manufacturer: 'NEIHOFF', country_of_origin: 'Germany', installed_date: '2006-12-01' },
+  'DT6': { id: 'DT6', name: 'Drawing Unit 6', area: 'PCP-1', section: 'DRW-STR', type: 'drawing', status: 'idle', speed: 0, targetSpeed: 32, temperature: 25, oee: 0, operator: null, description: 'Drawing Unit 6', manufacturer: null, country_of_origin: null, installed_date: null },
+  'XT2': { id: 'XT2', name: 'Stranding XT-2', area: 'PCP-1', section: 'DRW-STR', type: 'stranding', status: 'idle', speed: 0, targetSpeed: 50, temperature: 25, oee: 0, operator: null, description: 'Stranding XT-2', manufacturer: null, country_of_origin: null, installed_date: null },
 
-  // ========== LV CABLE SECTION - PCP-2 (14 Machines) ==========
-  'AR-3': { id: 'AR-3', name: 'Armoring 3', area: 'PCP-2', section: 'LV-Cable', type: 'armoring', status: 'running', speed: 17.2, targetSpeed: 18, temperature: 40, oee: 85, operator: 'Faisal Nasser' },
-  'XL-1': { id: 'XL-1', name: 'Extrusion Line 1', area: 'PCP-2', section: 'LV-Cable', type: 'extrusion', status: 'running', speed: 120, targetSpeed: 150, temperature: 185, oee: 68, operator: 'Yusuf Ibrahim' },
-  'XL-2': { id: 'XL-2', name: 'Extrusion Line 2', area: 'PCP-2', section: 'LV-Cable', type: 'extrusion', status: 'running', speed: 145, targetSpeed: 150, temperature: 190, oee: 88, operator: 'Tariq Saleh' },
-  'XT-1': { id: 'XT-1', name: 'Stranding XT-1', area: 'PCP-2', section: 'LV-Cable', type: 'stranding', status: 'running', speed: 45, targetSpeed: 50, temperature: 35, oee: 80, operator: 'Bandar Fahad' },
-  'XT-3': { id: 'XT-3', name: 'Stranding XT-3', area: 'PCP-2', section: 'LV-Cable', type: 'stranding', status: 'running', speed: 48, targetSpeed: 50, temperature: 36, oee: 84, operator: 'Majed Turki' },
-  'XT-6': { id: 'XT-6', name: 'Stranding XT-6', area: 'PCP-2', section: 'LV-Cable', type: 'stranding', status: 'idle', speed: 0, targetSpeed: 50, temperature: 25, oee: 0, operator: null },
-  'XT-7': { id: 'XT-7', name: 'Stranding XT-7', area: 'PCP-2', section: 'LV-Cable', type: 'stranding', status: 'running', speed: 42, targetSpeed: 50, temperature: 34, oee: 76, operator: 'Saud Abdullah' },
-  'XT-11': { id: 'XT-11', name: 'Stranding XT-11', area: 'PCP-2', section: 'LV-Cable', type: 'stranding', status: 'maintenance', speed: 0, targetSpeed: 50, temperature: 25, oee: 0, operator: null },
-  'REW-1': { id: 'REW-1', name: 'Rewinding 1', area: 'PCP-2', section: 'LV-Cable', type: 'rewinding', status: 'running', speed: 200, targetSpeed: 250, temperature: 30, oee: 75, operator: 'Omar Saeed' },
-  'REW-2': { id: 'REW-2', name: 'Rewinding 2', area: 'PCP-2', section: 'LV-Cable', type: 'rewinding', status: 'running', speed: 230, targetSpeed: 250, temperature: 32, oee: 82, operator: 'Nabil Hassan' },
-  'REW-10': { id: 'REW-10', name: 'Rewinding 10', area: 'PCP-2', section: 'LV-Cable', type: 'rewinding', status: 'running', speed: 215, targetSpeed: 250, temperature: 31, oee: 78, operator: 'Hussain Khalid' },
-  'MT-1': { id: 'MT-1', name: 'Testing MT-1', area: 'PCP-2', section: 'LV-Cable', type: 'testing', status: 'running', speed: 100, targetSpeed: 100, temperature: 25, oee: 92, operator: 'Ali Salman' },
-  'LX-3': { id: 'LX-3', name: 'Extrusion LX-3', area: 'PCP-2', section: 'LV-Cable', type: 'extrusion', status: 'running', speed: 95, targetSpeed: 120, temperature: 175, oee: 72, operator: 'Nawaf Sultan' },
+  // ========== LV-Cable SECTION - 42 machines ==========
+  'TAP-2': { id: 'TAP-2', name: 'TCP MICA Tape Line TAP-2', area: 'PCP-2', section: 'LV-Cable', type: 'taping', status: 'running', speed: 15, targetSpeed: 20, temperature: 50, oee: 78, operator: null, description: 'TCP MICA Tape Line TAP-2 (ALTEC)', manufacturer: 'ALTEC', country_of_origin: 'Italy', installed_date: '2008-11-30' },
+  'TAP-3': { id: 'TAP-3', name: 'TCP MICA Tape Line TAP-3', area: 'PCP-2', section: 'LV-Cable', type: 'taping', status: 'running', speed: 15, targetSpeed: 20, temperature: 50, oee: 77, operator: null, description: 'TCP MICA Tape Line TAP-3 (ALTEC)', manufacturer: 'ALTEC', country_of_origin: 'Italy', installed_date: '2008-11-30' },
+  'TAP-4': { id: 'TAP-4', name: 'TCP MICA Tape Line TAP-4', area: 'PCP-2', section: 'LV-Cable', type: 'taping', status: 'running', speed: 14, targetSpeed: 20, temperature: 48, oee: 74, operator: null, description: 'TCP MICA Tape Line TAP-4 (ALTEC)', manufacturer: 'ALTEC', country_of_origin: 'Italy', installed_date: '2020-07-31' },
+  'TAP-5': { id: 'TAP-5', name: 'TCP MICA Tape Line TAP-5', area: 'PCP-2', section: 'LV-Cable', type: 'taping', status: 'running', speed: 14, targetSpeed: 20, temperature: 48, oee: 75, operator: null, description: 'TCP MICA Tape Line TAP-5 (ALTEC)', manufacturer: 'ALTEC', country_of_origin: 'Italy', installed_date: '2020-07-31' },
+  'MT-1': { id: 'MT-1', name: 'MICA Tapping Line MC-1', area: 'PCP-2', section: 'LV-Cable', type: 'taping', status: 'running', speed: 18, targetSpeed: 20, temperature: 45, oee: 80, operator: null, description: 'MICA Tapping Line MC-1 (MSS)', manufacturer: 'MSS', country_of_origin: 'Turkey', installed_date: '2019-04-15' },
+  'XL-1': { id: 'XL-1', name: 'LV Insulation Line XL-1', area: 'PCP-2', section: 'LV-Cable', type: 'extrusion', status: 'running', speed: 120, targetSpeed: 150, temperature: 185, oee: 68, operator: null, description: 'LV Insulation Line XL-1 (MAILLEFER)', manufacturer: 'MAILLEFER', country_of_origin: 'Finland', installed_date: '2005-10-01' },
+  'XL-2': { id: 'XL-2', name: 'L.V. Insulation Line XL-2', area: 'PCP-2', section: 'LV-Cable', type: 'extrusion', status: 'running', speed: 145, targetSpeed: 150, temperature: 190, oee: 88, operator: null, description: 'L.V. Insulation Line XL-2 (MAILLEFER)', manufacturer: 'MAILLEFER', country_of_origin: 'Finland', installed_date: '1983-10-01' },
+  'XL-4': { id: 'XL-4', name: 'LV Insulation Line XL-4', area: 'PCP-2', section: 'LV-Cable', type: 'extrusion', status: 'running', speed: 130, targetSpeed: 150, temperature: 188, oee: 75, operator: null, description: 'LV Insulation Line XL-4 (MAILLEFER)', manufacturer: 'MAILLEFER', country_of_origin: 'Finland', installed_date: '2011-06-27' },
+  'XT-1': { id: 'XT-1', name: 'BW Insulation Line XT-1', area: 'PCP-2', section: 'LV-Cable', type: 'extrusion', status: 'running', speed: 120, targetSpeed: 150, temperature: 180, oee: 80, operator: null, description: 'BW Insulation Line XT-1 (JOHN ROYAL)', manufacturer: 'JOHN ROYAL', country_of_origin: 'USA', installed_date: '1978-07-01' },
+  'XT-3': { id: 'XT-3', name: 'L.V. Tandem Line XT-3', area: 'PCP-2', section: 'LV-Cable', type: 'processing', status: 'running', speed: 110, targetSpeed: 150, temperature: 182, oee: 84, operator: null, description: 'L.V. Tandem Line XT-3 (JOHN ROYAL)', manufacturer: 'JOHN ROYAL', country_of_origin: 'USA', installed_date: '1982-07-01' },
+  'XT-4': { id: 'XT-4', name: 'LV Sheathing Line XT-4', area: 'PCP-2', section: 'LV-Cable', type: 'extrusion', status: 'running', speed: 115, targetSpeed: 150, temperature: 178, oee: 78, operator: null, description: 'LV Sheathing Line XT-4 (JOHN ROYAL)', manufacturer: 'JOHN ROYAL', country_of_origin: 'USA', installed_date: '1981-12-01' },
+  'XT-6': { id: 'XT-6', name: 'LV Sheathing Line XT-6', area: 'PCP-2', section: 'LV-Cable', type: 'extrusion', status: 'running', speed: 125, targetSpeed: 150, temperature: 180, oee: 76, operator: null, description: 'LV Sheathing Line XT-6 (SUPERMAC)', manufacturer: 'SUPERMAC', country_of_origin: 'India', installed_date: '2007-11-21' },
+  'XT-9': { id: 'XT-9', name: 'THHN Insulation Line XT-9', area: 'PCP-2', section: 'LV-Cable', type: 'extrusion', status: 'running', speed: 130, targetSpeed: 150, temperature: 185, oee: 80, operator: null, description: 'THHN Insulation Line XT-9 (ROSENDAHL)', manufacturer: 'ROSENDAHL', country_of_origin: 'Austria', installed_date: '2010-09-27' },
+  'XT-10': { id: 'XT-10', name: 'LV Insulation Line XT-10', area: 'PCP-2', section: 'LV-Cable', type: 'extrusion', status: 'running', speed: 135, targetSpeed: 150, temperature: 186, oee: 83, operator: null, description: 'LV Insulation Line XT-10 (ROSENDAHL)', manufacturer: 'ROSENDAHL', country_of_origin: 'Austria', installed_date: '2011-08-01' },
+  'XT-11': { id: 'XT-11', name: 'LV Sheathing Line XT-11', area: 'PCP-2', section: 'LV-Cable', type: 'extrusion', status: 'running', speed: 128, targetSpeed: 150, temperature: 179, oee: 77, operator: null, description: 'LV Sheathing Line XT-11 (SUPERMAC)', manufacturer: 'SUPERMAC', country_of_origin: 'India', installed_date: '2012-12-31' },
+  'XT-12': { id: 'XT-12', name: 'LV Tandem Line XT-12', area: 'PCP-2', section: 'LV-Cable', type: 'processing', status: 'running', speed: 118, targetSpeed: 150, temperature: 181, oee: 81, operator: null, description: 'LV Tandem Line XT-12 (SUPERMAC)', manufacturer: 'SUPERMAC', country_of_origin: 'India', installed_date: '2012-12-31' },
+  'XT-13': { id: 'XT-13', name: 'LV Sheathing Line XT-13', area: 'PCP-2', section: 'LV-Cable', type: 'extrusion', status: 'running', speed: 126, targetSpeed: 150, temperature: 180, oee: 78, operator: null, description: 'LV Sheathing Line XT-13 (SUPERMAC)', manufacturer: 'SUPERMAC', country_of_origin: 'India', installed_date: '2012-12-31' },
+  'AR-2': { id: 'AR-2', name: 'L.V. Steel Tape Armoring Line AR-2', area: 'PCP-2', section: 'LV-Cable', type: 'armoring', status: 'running', speed: 15.5, targetSpeed: 18, temperature: 42, oee: 71, operator: null, description: 'L.V. Steel Tape Armoring Line AR-2 (POURTIER)', manufacturer: 'POURTIER', country_of_origin: 'France', installed_date: '1984-07-01' },
+  'AR-3': { id: 'AR-3', name: 'LV Steel Tape Armoring Line AR-3', area: 'PCP-2', section: 'LV-Cable', type: 'armoring', status: 'running', speed: 17.2, targetSpeed: 18, temperature: 40, oee: 85, operator: null, description: 'LV Steel Tape Armoring Line AR-3 (CEECO)', manufacturer: 'CEECO', country_of_origin: 'USA', installed_date: '1996-12-01' },
+  'BC-1': { id: 'BC-1', name: 'LV Assembly Line BC-1', area: 'PCP-2', section: 'LV-Cable', type: 'assembly', status: 'running', speed: 35, targetSpeed: 40, temperature: 38, oee: 75, operator: null, description: 'LV Assembly Line BC-1 (EDMUNDS)', manufacturer: 'EDMUNDS', country_of_origin: 'USA', installed_date: '1978-07-01' },
+  'BC-2': { id: 'BC-2', name: 'LV Assembly Line BC-2', area: 'PCP-2', section: 'LV-Cable', type: 'assembly', status: 'running', speed: 36, targetSpeed: 40, temperature: 37, oee: 78, operator: null, description: 'LV Assembly Line BC-2 (LESMO)', manufacturer: 'LESMO', country_of_origin: 'Italy', installed_date: '2011-11-30' },
+  'DT-1': { id: 'DT-1', name: 'LV Assembly Line DT-1', area: 'PCP-2', section: 'LV-Cable', type: 'assembly', status: 'running', speed: 28.5, targetSpeed: 32, temperature: 45, oee: 78, operator: null, description: 'LV Assembly Line DT-1 (POURTIER)', manufacturer: 'POURTIER', country_of_origin: 'France', installed_date: '1981-12-01' },
+  'DT-2': { id: 'DT-2', name: 'L.V. Steel Wire Armoring Line DT-2', area: 'PCP-2', section: 'LV-Cable', type: 'armoring', status: 'running', speed: 16.5, targetSpeed: 18, temperature: 43, oee: 82, operator: null, description: 'L.V. Steel Wire Armoring Line DT-2 (POURTIER)', manufacturer: 'POURTIER', country_of_origin: 'France', installed_date: '1984-04-01' },
+  'DT-4': { id: 'DT-4', name: 'LV Assembly Line DT-4', area: 'PCP-2', section: 'LV-Cable', type: 'assembly', status: 'running', speed: 29, targetSpeed: 32, temperature: 44, oee: 76, operator: null, description: 'LV Assembly Line DT-4 (STOLBERGER)', manufacturer: 'STOLBERGER', country_of_origin: 'Germany', installed_date: '2000-07-01' },
+  'DT-5': { id: 'DT-5', name: 'LV Assembly and Steel Wire Armoring Line DT-5', area: 'PCP-2', section: 'LV-Cable', type: 'armoring', status: 'running', speed: 16, targetSpeed: 18, temperature: 44, oee: 79, operator: null, description: 'LV Assembly and Steel Wire Armoring Line DT-5 (POURTIER)', manufacturer: 'POURTIER', country_of_origin: 'France', installed_date: '2008-05-24' },
+  'DT-8': { id: 'DT-8', name: 'LV Assembly and Steel Wire Armoring Line DT-8', area: 'PCP-2', section: 'LV-Cable', type: 'armoring', status: 'running', speed: 17, targetSpeed: 18, temperature: 42, oee: 86, operator: null, description: 'LV Assembly and Steel Wire Armoring Line DT-8 (POURTIER)', manufacturer: 'POURTIER', country_of_origin: 'France', installed_date: '2012-12-30' },
+  'DT-9': { id: 'DT-9', name: 'LV Steel Wire Armoring Line DT-9', area: 'PCP-2', section: 'LV-Cable', type: 'armoring', status: 'running', speed: 16.8, targetSpeed: 18, temperature: 43, oee: 80, operator: null, description: 'LV Steel Wire Armoring Line DT-9 (POURTIER)', manufacturer: 'POURTIER', country_of_origin: 'France', installed_date: '2012-12-30' },
+  'PS-1': { id: 'PS-1', name: 'BW Cutting Line PS-1', area: 'PCP-2', section: 'LV-Cable', type: 'cutting', status: 'running', speed: 22, targetSpeed: 25, temperature: 35, oee: 74, operator: null, description: 'BW Cutting Line PS-1 (PS)', manufacturer: 'PS', country_of_origin: 'Italy', installed_date: '2002-07-01' },
+  'PS-2': { id: 'PS-2', name: 'BW Cutting Line PS-2', area: 'PCP-2', section: 'LV-Cable', type: 'cutting', status: 'running', speed: 24.5, targetSpeed: 25, temperature: 34, oee: 82, operator: null, description: 'BW Cutting Line PS-2 (PS)', manufacturer: 'PS', country_of_origin: 'Italy', installed_date: '2010-09-27' },
+  'PS-3': { id: 'PS-3', name: 'BW Cutting Line PS-3', area: 'PCP-2', section: 'LV-Cable', type: 'cutting', status: 'running', speed: 23, targetSpeed: 25, temperature: 34, oee: 76, operator: null, description: 'BW Cutting Line PS-3 (PS)', manufacturer: 'PS', country_of_origin: 'Italy', installed_date: '2010-09-27' },
+  'PS-4': { id: 'PS-4', name: 'BW Cutting Line PS-4', area: 'PCP-2', section: 'LV-Cable', type: 'cutting', status: 'running', speed: 23.8, targetSpeed: 25, temperature: 35, oee: 78, operator: null, description: 'BW Cutting Line PS-4 (PS)', manufacturer: 'PS', country_of_origin: 'Italy', installed_date: '2012-08-31' },
+  'TWI-1': { id: 'TWI-1', name: 'TCP Insulation Line TWI-1', area: 'PCP-2', section: 'LV-Cable', type: 'extrusion', status: 'running', speed: 55, targetSpeed: 60, temperature: 175, oee: 76, operator: null, description: 'TCP Insulation Line TWI-1 (MAILLEFER)', manufacturer: 'MAILLEFER', country_of_origin: 'Finland', installed_date: '1990-01-01' },
+  'TWI-2': { id: 'TWI-2', name: 'TCP Insulation Line TWI-2', area: 'PCP-2', section: 'LV-Cable', type: 'extrusion', status: 'running', speed: 58, targetSpeed: 60, temperature: 176, oee: 82, operator: null, description: 'TCP Insulation Line TWI-2 (MAILLEFER)', manufacturer: 'MAILLEFER', country_of_origin: 'Finland', installed_date: '1990-01-01' },
+  'CAB-2': { id: 'CAB-2', name: 'TCP Pairing Line CAB-2', area: 'PCP-2', section: 'LV-Cable', type: 'assembly', status: 'running', speed: 35, targetSpeed: 40, temperature: 38, oee: 79, operator: null, description: 'TCP Pairing Line CAB-2 (SETIC)', manufacturer: 'SETIC', country_of_origin: 'France', installed_date: '2007-11-03' },
+  'CAB-4': { id: 'CAB-4', name: 'TCP Pairing Line CAB-4', area: 'PCP-2', section: 'LV-Cable', type: 'assembly', status: 'running', speed: 38, targetSpeed: 40, temperature: 39, oee: 85, operator: null, description: 'TCP Pairing Line CAB-4 (SETIC)', manufacturer: 'SETIC', country_of_origin: 'France', installed_date: '2007-11-03' },
+  'CAB-5': { id: 'CAB-5', name: 'TCP Pairing Line CAB-5', area: 'PCP-2', section: 'LV-Cable', type: 'assembly', status: 'running', speed: 36, targetSpeed: 40, temperature: 38, oee: 80, operator: null, description: 'TCP Pairing Line CAB-5 (SETIC)', manufacturer: 'SETIC', country_of_origin: 'France', installed_date: '2007-11-03' },
+  'DTU': { id: 'DTU', name: 'TCP Assembly Lines DTU', area: 'PCP-2', section: 'LV-Cable', type: 'assembly', status: 'running', speed: 29.2, targetSpeed: 32, temperature: 44, oee: 78, operator: null, description: 'TCP Assembly Lines DTU (POURTIER)', manufacturer: 'POURTIER', country_of_origin: 'France', installed_date: '1990-01-01' },
+  'DTA': { id: 'DTA', name: 'TCP Assembly Lines DTA', area: 'PCP-2', section: 'LV-Cable', type: 'assembly', status: 'running', speed: 30.5, targetSpeed: 32, temperature: 43, oee: 84, operator: null, description: 'TCP Assembly Lines DTA (POURTIER)', manufacturer: 'POURTIER', country_of_origin: 'France', installed_date: '1990-01-01' },
+  'ARM-4': { id: 'ARM-4', name: 'TCP Steel Wire Armoring Line AR-4', area: 'PCP-2', section: 'LV-Cable', type: 'armoring', status: 'running', speed: 16.2, targetSpeed: 18, temperature: 41, oee: 77, operator: null, description: 'TCP Steel Wire Armoring Line AR-4 (POURTIER)', manufacturer: 'POURTIER', country_of_origin: 'France', installed_date: '2006-08-01' },
+  'JKT-4': { id: 'JKT-4', name: 'TCP Sheathing Line JKT-4', area: 'PCP-2', section: 'LV-Cable', type: 'extrusion', status: 'running', speed: 18, targetSpeed: 20, temperature: 155, oee: 81, operator: null, description: 'TCP Sheathing Line JKT-4 (ROSENDAHL)', manufacturer: 'ROSENDAHL', country_of_origin: 'Austria', installed_date: '2007-11-22' },
+  'SLT': { id: 'SLT', name: 'TCP Slitting Line', area: 'PCP-3', section: 'LV-Cable', type: 'cutting', status: 'running', speed: 20, targetSpeed: 25, temperature: 40, oee: 80, operator: null, description: 'TCP Slitting Line (WYE)', manufacturer: 'WYE', country_of_origin: 'Switzerland', installed_date: '2000-11-01' },
+  'XT-7': { id: 'XT-7', name: 'LV Sheathing Line XT-7', area: 'PCP-2', section: 'LV-Cable', type: 'extrusion', status: 'running', speed: 122, targetSpeed: 150, temperature: 179, oee: 76, operator: null, description: 'LV Sheathing Line XT-7 (SUPERMAC)', manufacturer: 'SUPERMAC', country_of_origin: 'India', installed_date: '2007-11-21' },
 
-  // ========== BSI CABLE SECTION - PCP-1 (8 Machines) ==========
-  'DT-5': { id: 'DT-5', name: 'Drawing Unit 5', area: 'PCP-1', section: 'BSI-Cable', type: 'drawing', status: 'running', speed: 29.8, targetSpeed: 32, temperature: 44, oee: 79, operator: 'Shahid Iqbal' },
-  'DT-8': { id: 'DT-8', name: 'Drawing Unit 8', area: 'PCP-1', section: 'BSI-Cable', type: 'drawing', status: 'running', speed: 31.5, targetSpeed: 32, temperature: 42, oee: 86, operator: 'Essa Awaab' },
-  'DT-9': { id: 'DT-9', name: 'Drawing Unit 9', area: 'PCP-1', section: 'BSI-Cable', type: 'drawing', status: 'idle', speed: 0, targetSpeed: 32, temperature: 25, oee: 0, operator: null },
-  'PS-1': { id: 'PS-1', name: 'Processing PS-1', area: 'PCP-1', section: 'BSI-Cable', type: 'processing', status: 'running', speed: 22, targetSpeed: 25, temperature: 165, oee: 74, operator: 'Noshad Ahmed' },
-  'PS-2': { id: 'PS-2', name: 'Processing PS-2', area: 'PCP-1', section: 'BSI-Cable', type: 'processing', status: 'running', speed: 24.5, targetSpeed: 25, temperature: 170, oee: 82, operator: 'Abdul Qadir' },
-  'PS-3': { id: 'PS-3', name: 'Processing PS-3', area: 'PCP-1', section: 'BSI-Cable', type: 'processing', status: 'stopped', speed: 0, targetSpeed: 25, temperature: 25, oee: 0, operator: null },
-  'PS-4': { id: 'PS-4', name: 'Processing PS-4', area: 'PCP-1', section: 'BSI-Cable', type: 'processing', status: 'running', speed: 23.8, targetSpeed: 25, temperature: 168, oee: 78, operator: 'Kamal Saqr' },
-  'XT-9': { id: 'XT-9', name: 'Stranding XT-9', area: 'PCP-1', section: 'BSI-Cable', type: 'stranding', status: 'running', speed: 44, targetSpeed: 50, temperature: 36, oee: 80, operator: 'Salem Ahmad' },
+  // ========== MV-HV SECTION - 8 machines ==========
+  'CV-1': { id: 'CV-1', name: 'HV Insulation Line CV-1', area: 'CV-Line', section: 'MV-HV', type: 'extrusion', status: 'running', speed: 8.5, targetSpeed: 10, temperature: 320, oee: 72, operator: null, description: 'HV Insulation Line CV-1 (MAILLEFER)', manufacturer: 'MAILLEFER', country_of_origin: 'Finland', installed_date: '1996-06-01' },
+  'CV-2': { id: 'CV-2', name: 'HVEHV Insulation Line CV-2', area: 'CV-Line', section: 'MV-HV', type: 'extrusion', status: 'running', speed: 9.2, targetSpeed: 10, temperature: 315, oee: 78, operator: null, description: 'HVEHV Insulation Line CV-2 (MAILLEFER)', manufacturer: 'MAILLEFER', country_of_origin: 'Finland', installed_date: '2008-04-30' },
+  'CV-3': { id: 'CV-3', name: 'MVHV Insulation Line CV-3', area: 'CV-Line', section: 'MV-HV', type: 'extrusion', status: 'running', speed: 8.8, targetSpeed: 10, temperature: 310, oee: 75, operator: null, description: 'MVHV Insulation Line CV-3 (MAILLEFER)', manufacturer: 'MAILLEFER', country_of_origin: 'Finland', installed_date: '2010-02-28' },
+  'DT-7': { id: 'DT-7', name: 'MVHV Assembly Line DT-7', area: 'CV-Line', section: 'MV-HV', type: 'assembly', status: 'running', speed: 25, targetSpeed: 30, temperature: 40, oee: 77, operator: null, description: 'MVHV Assembly Line DT-7 (POURTIER)', manufacturer: 'POURTIER', country_of_origin: 'France', installed_date: '2009-08-31' },
+  'XT-8': { id: 'XT-8', name: 'MVHV Sheathing Line XT-8', area: 'CV-Line', section: 'MV-HV', type: 'extrusion', status: 'running', speed: 40, targetSpeed: 50, temperature: 185, oee: 74, operator: null, description: 'MVHV Sheathing Line XT-8 (MAILLEFER)', manufacturer: 'MAILLEFER', country_of_origin: 'Finland', installed_date: '2008-08-31' },
+  'LX-2': { id: 'LX-2', name: 'MVHV Lead Line LX-2', area: 'CV-Line', section: 'MV-HV', type: 'processing', status: 'running', speed: 10, targetSpeed: 15, temperature: 200, oee: 70, operator: null, description: 'MVHV Lead Line LX-2 (HFSAB)', manufacturer: 'HFSAB', country_of_origin: 'Sweden', installed_date: '2009-04-30' },
+  'LX-3': { id: 'LX-3', name: 'MVHV Lead Line LX-3', area: 'CV-Line', section: 'MV-HV', type: 'processing', status: 'running', speed: 11, targetSpeed: 15, temperature: 195, oee: 72, operator: null, description: 'MVHV Lead Line LX-3 (HFSAB)', manufacturer: 'HFSAB', country_of_origin: 'Sweden', installed_date: '2011-10-31' },
+  'SC-2': { id: 'SC-2', name: 'MVHV Screening Line SC-2', area: 'CV-Line', section: 'MV-HV', type: 'processing', status: 'running', speed: 15, targetSpeed: 20, temperature: 45, oee: 73, operator: null, description: 'MVHV Screening Line SC-2 (CORTINOVIS)', manufacturer: 'CORTINOVIS', country_of_origin: 'Italy', installed_date: '2008-04-30' },
 
-  // ========== BSI CABLE SECTION - PCP-2 (15 Machines) ==========
-  'XT-10': { id: 'XT-10', name: 'Stranding XT-10', area: 'PCP-2', section: 'BSI-Cable', type: 'stranding', status: 'running', speed: 46, targetSpeed: 50, temperature: 35, oee: 83, operator: 'Rashid Nasser' },
-  'XT-12': { id: 'XT-12', name: 'Stranding XT-12', area: 'PCP-2', section: 'BSI-Cable', type: 'stranding', status: 'running', speed: 47, targetSpeed: 50, temperature: 37, oee: 81, operator: 'Waleed Fahad' },
-  'JKT-4': { id: 'JKT-4', name: 'Jacketing JKT-4', area: 'PCP-2', section: 'BSI-Cable', type: 'jacketing', status: 'running', speed: 18, targetSpeed: 20, temperature: 155, oee: 81, operator: 'Talal Al-Farmi' },
-  'XT-13': { id: 'XT-13', name: 'Stranding XT-13', area: 'PCP-2', section: 'BSI-Cable', type: 'stranding', status: 'idle', speed: 0, targetSpeed: 50, temperature: 25, oee: 0, operator: null },
-  'ARM-4': { id: 'ARM-4', name: 'Armoring ARM-4', area: 'PCP-2', section: 'BSI-Cable', type: 'armoring', status: 'running', speed: 16.2, targetSpeed: 18, temperature: 41, oee: 77, operator: 'Hassan Mahmoud' },
-  'CAB-2': { id: 'CAB-2', name: 'Cabling CAB-2', area: 'PCP-2', section: 'BSI-Cable', type: 'cabling', status: 'running', speed: 35, targetSpeed: 40, temperature: 38, oee: 79, operator: 'Yasser Omar' },
-  'CAB-4': { id: 'CAB-4', name: 'Cabling CAB-4', area: 'PCP-2', section: 'BSI-Cable', type: 'cabling', status: 'running', speed: 38, targetSpeed: 40, temperature: 39, oee: 85, operator: 'Adel Khalid' },
-  'CAB-5': { id: 'CAB-5', name: 'Cabling CAB-5', area: 'PCP-2', section: 'BSI-Cable', type: 'cabling', status: 'maintenance', speed: 0, targetSpeed: 40, temperature: 25, oee: 0, operator: null },
-  'TWI-1': { id: 'TWI-1', name: 'Twisting TWI-1', area: 'PCP-2', section: 'BSI-Cable', type: 'twisting', status: 'running', speed: 55, targetSpeed: 60, temperature: 32, oee: 76, operator: 'Fares Abdullah' },
-  'TWI-2': { id: 'TWI-2', name: 'Twisting TWI-2', area: 'PCP-2', section: 'BSI-Cable', type: 'twisting', status: 'running', speed: 58, targetSpeed: 60, temperature: 33, oee: 82, operator: 'Mazen Saeed' },
-  'REW-4': { id: 'REW-4', name: 'Rewinding 4', area: 'PCP-2', section: 'BSI-Cable', type: 'rewinding', status: 'running', speed: 210, targetSpeed: 250, temperature: 30, oee: 77, operator: 'Sami Turki' },
-  'REW-5': { id: 'REW-5', name: 'Rewinding 5', area: 'PCP-2', section: 'BSI-Cable', type: 'rewinding', status: 'running', speed: 225, targetSpeed: 250, temperature: 31, oee: 80, operator: 'Ibrahim Majed' },
-  'DTA': { id: 'DTA', name: 'Drawing DTA', area: 'PCP-2', section: 'BSI-Cable', type: 'drawing', status: 'running', speed: 30.5, targetSpeed: 32, temperature: 43, oee: 84, operator: 'Khalid Mansour' },
-  'DTU': { id: 'DTU', name: 'Drawing DTU', area: 'PCP-2', section: 'BSI-Cable', type: 'drawing', status: 'running', speed: 29.2, targetSpeed: 32, temperature: 44, oee: 78, operator: 'Nayef Sultan' },
-
-  // ========== CV Line Area ==========
-  'CV-1': { id: 'CV-1', name: 'CV Line 1', area: 'CV-Line', section: 'CV', type: 'cv-line', status: 'running', speed: 8.5, targetSpeed: 10, temperature: 320, oee: 72, operator: 'Fahad Nasser' },
-  'CV-2': { id: 'CV-2', name: 'CV Line 2', area: 'CV-Line', section: 'CV', type: 'cv-line', status: 'running', speed: 9.2, targetSpeed: 10, temperature: 315, oee: 78, operator: 'Abdulrahman Saleh' },
-
-  // ========== Storage & Support ==========
-  'SILO-1': { id: 'SILO-1', name: 'Silo 1', area: 'Storage', section: 'Support', type: 'storage', status: 'running', speed: 0, targetSpeed: 0, temperature: 22, oee: 95, operator: null },
-  'SILO-2': { id: 'SILO-2', name: 'Silo 2', area: 'Storage', section: 'Support', type: 'storage', status: 'running', speed: 0, targetSpeed: 0, temperature: 23, oee: 90, operator: null },
+  // ========== Support SECTION - 17 machines ==========
+  'ST-1': { id: 'ST-1', name: '30W Rigid Strander machine', area: 'PCP-1', section: 'DRW-STR', type: 'stranding', status: 'running', speed: 40, targetSpeed: 50, temperature: 35, oee: 75, operator: null, description: '30W Rigid Strander machine', manufacturer: 'JOHN ROYAL', country_of_origin: 'USA', installed_date: '1978-07-01' },
+  'BWR-2': { id: 'BWR-2', name: 'Rewinding BWR-2', area: 'Support', section: 'Support', type: 'rewinding', status: 'running', speed: 200, targetSpeed: 250, temperature: 30, oee: 75, operator: null, description: 'REWINDING', manufacturer: 'STOLBERGER', country_of_origin: 'Germany', installed_date: '1984-01-01' },
+  'BWR-3': { id: 'BWR-3', name: 'Rewinding BWR-3', area: 'Support', section: 'Support', type: 'rewinding', status: 'running', speed: 210, targetSpeed: 250, temperature: 31, oee: 77, operator: null, description: 'REWINDING', manufacturer: 'STOLBERGER', country_of_origin: 'Germany', installed_date: '1984-01-01' },
+  'BWR-1': { id: 'BWR-1', name: 'Rewinding BWR-1', area: 'Support', section: 'Support', type: 'rewinding', status: 'running', speed: 195, targetSpeed: 250, temperature: 30, oee: 74, operator: null, description: 'REWINDING', manufacturer: 'STOLBERGER', country_of_origin: 'Germany', installed_date: '1984-01-01' },
+  'PVC-L1': { id: 'PVC-L1', name: 'Compounding PVC-L1', area: 'PVC-Plant', section: 'Support', type: 'compounding', status: 'running', speed: 50, targetSpeed: 60, temperature: 180, oee: 82, operator: null, description: 'COMPOUNDING', manufacturer: 'BUSS+GOVONI', country_of_origin: 'Italy', installed_date: '1986-07-01' },
+  'PVC-L2': { id: 'PVC-L2', name: 'Compounding PVC-L2', area: 'PVC-Plant', section: 'Support', type: 'compounding', status: 'running', speed: 48, targetSpeed: 60, temperature: 178, oee: 80, operator: null, description: 'COMPOUNDING', manufacturer: 'BUSS', country_of_origin: 'Italy', installed_date: '2011-06-27' },
+  'RW-3': { id: 'RW-3', name: 'Rewinding RW-3', area: 'Support', section: 'Support', type: 'rewinding', status: 'running', speed: 200, targetSpeed: 250, temperature: 30, oee: 75, operator: null, description: 'REWINDING', manufacturer: 'STOLBERGER', country_of_origin: 'Germany', installed_date: '1982-01-01' },
+  'RW-4': { id: 'RW-4', name: 'Rewinding RW-4', area: 'Support', section: 'Support', type: 'rewinding', status: 'running', speed: 210, targetSpeed: 250, temperature: 31, oee: 77, operator: null, description: 'REWINDING', manufacturer: 'STOLBERGER', country_of_origin: 'Germany', installed_date: '1982-01-01' },
+  'RW-2': { id: 'RW-2', name: 'Rewinding RW-2', area: 'Support', section: 'Support', type: 'rewinding', status: 'running', speed: 195, targetSpeed: 250, temperature: 30, oee: 74, operator: null, description: 'REWINDING', manufacturer: 'STOLBERGER', country_of_origin: 'Germany', installed_date: '1982-01-01' },
+  'RW-1': { id: 'RW-1', name: 'Rewinding RW-1', area: 'Support', section: 'Support', type: 'rewinding', status: 'running', speed: 190, targetSpeed: 250, temperature: 30, oee: 73, operator: null, description: 'REWINDING', manufacturer: 'STOLBERGER', country_of_origin: 'Germany', installed_date: '1982-01-01' },
+  'RW-11': { id: 'RW-11', name: 'Rewinding RW-11', area: 'Support', section: 'Support', type: 'rewinding', status: 'running', speed: 205, targetSpeed: 250, temperature: 31, oee: 76, operator: null, description: 'REWINDING', manufacturer: 'STOLBERGER', country_of_origin: 'Germany', installed_date: '1982-01-01' },
+  'RW-12': { id: 'RW-12', name: 'Rewinding RW-12', area: 'Support', section: 'Support', type: 'rewinding', status: 'running', speed: 208, targetSpeed: 250, temperature: 31, oee: 77, operator: null, description: 'REWINDING', manufacturer: 'STOLBERGER', country_of_origin: 'Germany', installed_date: '1982-01-01' },
+  'HVRW': { id: 'HVRW', name: 'Rewinding HVRW', area: 'CV-Line', section: 'MV-HV', type: 'rewinding', status: 'running', speed: 180, targetSpeed: 200, temperature: 30, oee: 80, operator: null, description: 'REWINDING', manufacturer: 'POURTIER', country_of_origin: 'France', installed_date: '1982-01-01' },
+  'RW-10': { id: 'RW-10', name: 'Rewinding RW-10', area: 'Support', section: 'Support', type: 'rewinding', status: 'running', speed: 215, targetSpeed: 250, temperature: 31, oee: 78, operator: null, description: 'REWINDING', manufacturer: 'STOLBERGER', country_of_origin: 'Germany', installed_date: '1982-01-01' },
+  'RW-5': { id: 'RW-5', name: 'Rewinding RW-5', area: 'Support', section: 'Support', type: 'rewinding', status: 'running', speed: 225, targetSpeed: 250, temperature: 31, oee: 80, operator: null, description: 'REWINDING', manufacturer: 'STOLBERGER', country_of_origin: 'Germany', installed_date: '1982-01-01' },
+  'D-GASSING': { id: 'D-GASSING', name: 'HEAT TREATMENT', area: 'CV-Line', section: 'MV-HV', type: 'processing', status: 'running', speed: 0, targetSpeed: 0, temperature: 300, oee: 85, operator: null, description: 'HEAT TREATMENT', manufacturer: 'LOCAL', country_of_origin: null, installed_date: '2017-01-01' },
+  'ROD-MILL': { id: 'ROD-MILL', name: 'ROLLING MILL', area: 'ROD-MILL', section: 'Support', type: 'processing', status: 'running', speed: 100, targetSpeed: 120, temperature: 600, oee: 78, operator: null, description: 'ROLLING MILL', manufacturer: 'SMS MEER', country_of_origin: 'Germany', installed_date: '1985-12-01' },
+  'REW-1': { id: 'REW-1', name: 'Rewinding 1', area: 'Support', section: 'Support', type: 'rewinding', status: 'running', speed: 200, targetSpeed: 250, temperature: 30, oee: 75, operator: null, description: 'Rewinding 1', manufacturer: null, country_of_origin: null, installed_date: null },
+  'REW-2': { id: 'REW-2', name: 'Rewinding 2', area: 'Support', section: 'Support', type: 'rewinding', status: 'running', speed: 195, targetSpeed: 250, temperature: 30, oee: 74, operator: null, description: 'Rewinding 2', manufacturer: null, country_of_origin: null, installed_date: null },
+  'REW-4': { id: 'REW-4', name: 'Rewinding 4', area: 'Support', section: 'Support', type: 'rewinding', status: 'running', speed: 210, targetSpeed: 250, temperature: 31, oee: 77, operator: null, description: 'Rewinding 4', manufacturer: null, country_of_origin: null, installed_date: null },
+  'REW-5': { id: 'REW-5', name: 'Rewinding 5', area: 'Support', section: 'Support', type: 'rewinding', status: 'running', speed: 205, targetSpeed: 250, temperature: 31, oee: 76, operator: null, description: 'Rewinding 5', manufacturer: null, country_of_origin: null, installed_date: null },
+  'REW-10': { id: 'REW-10', name: 'Rewinding 10', area: 'Support', section: 'Support', type: 'rewinding', status: 'running', speed: 215, targetSpeed: 250, temperature: 31, oee: 78, operator: null, description: 'Rewinding 10', manufacturer: null, country_of_origin: null, installed_date: null },
+  'SILO-1': { id: 'SILO-1', name: 'Silo 1', area: 'PVC-Plant', section: 'Support', type: 'storage', status: 'running', speed: 0, targetSpeed: 0, temperature: 25, oee: 95, operator: null, description: 'PVC Storage Silo 1', manufacturer: null, country_of_origin: null, installed_date: null },
+  'SILO-2': { id: 'SILO-2', name: 'Silo 2', area: 'PVC-Plant', section: 'Support', type: 'storage', status: 'running', speed: 0, targetSpeed: 0, temperature: 25, oee: 95, operator: null, description: 'PVC Storage Silo 2', manufacturer: null, country_of_origin: null, installed_date: null },
 };
 
 // Initial work orders
@@ -367,13 +422,62 @@ const rainImpactData = {
   inProgress: 1
 };
 
+// Fallback employee data
+const initialEmployees = [
+  { id: 'local-1', employee_id: 'EMP001', name_en: 'Ahmed Ali', name_ar: 'أحمد علي', department: 'production', role: 'operator', section: 'PCP-1', shift: 'morning', status: 'active', assigned_machine_id: 'DT-1' },
+  { id: 'local-2', employee_id: 'EMP002', name_en: 'Mohammed Hassan', name_ar: 'محمد حسن', department: 'production', role: 'operator', section: 'PCP-1', shift: 'morning', status: 'active', assigned_machine_id: 'DT-2' },
+  { id: 'local-3', employee_id: 'EMP003', name_en: 'Khalid Omar', name_ar: 'خالد عمر', department: 'production', role: 'operator', section: 'PCP-1', shift: 'morning', status: 'active', assigned_machine_id: 'BC-1' },
+  { id: 'local-4', employee_id: 'EMP004', name_en: 'Saeed Ahmed', name_ar: 'سعيد أحمد', department: 'production', role: 'operator', section: 'PCP-1', shift: 'evening', status: 'active', assigned_machine_id: 'AR-2' },
+  { id: 'local-5', employee_id: 'EMP005', name_en: 'Faisal Nasser', name_ar: 'فيصل ناصر', department: 'production', role: 'operator', section: 'PCP-2', shift: 'morning', status: 'active', assigned_machine_id: 'AR-3' },
+  { id: 'local-6', employee_id: 'EMP009', name_en: 'Ali Supervisor', name_ar: 'علي المشرف', department: 'production', role: 'supervisor', section: 'PCP-1', shift: 'morning', status: 'active', assigned_machine_id: null },
+  { id: 'local-7', employee_id: 'EMP011', name_en: 'Ibrahim Tech', name_ar: 'إبراهيم الفني', department: 'maintenance', role: 'technician', section: 'PCP-1', shift: 'morning', status: 'active', assigned_machine_id: null },
+  { id: 'local-8', employee_id: 'EMP013', name_en: 'Fahad Engineer', name_ar: 'فهد المهندس', department: 'maintenance', role: 'engineer', section: 'PCP-1', shift: 'morning', status: 'active', assigned_machine_id: null },
+  { id: 'local-9', employee_id: 'EMP015', name_en: 'Hassan Maint Sup', name_ar: 'حسن مشرف الصيانة', department: 'maintenance', role: 'supervisor', section: 'PCP-1', shift: 'morning', status: 'active', assigned_machine_id: null },
+];
+
 export const DataProvider = ({ children }) => {
   const [machines, setMachines] = useState(initialMachines);
+  const [employees, setEmployees] = useState(initialEmployees);
   const [workOrders, setWorkOrders] = useState(initialWorkOrders);
   const [maintenance, setMaintenance] = useState(initialMaintenance);
   const [alerts, setAlerts] = useState([]);
   const [scrapData, setScrapData] = useState([]);
   const [productionLogs, setProductionLogs] = useState([]);
+  const [machineTypes, setMachineTypes] = useState([]);
+  const [dbConnected, setDbConnected] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Load machines from Supabase on mount (fallback to hardcoded)
+  useEffect(() => {
+    const loadFromDB = async () => {
+      if (!isSupabaseConfigured()) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const [dbMachines, dbTypes, dbEmployees] = await Promise.all([
+          fetchMachinesFromDB(),
+          fetchTypesDB(),
+          fetchEmployeesFromDB(),
+        ]);
+        if (dbMachines && Object.keys(dbMachines).length > 0) {
+          setMachines(dbMachines);
+          setDbConnected(true);
+        }
+        if (dbTypes) {
+          setMachineTypes(dbTypes);
+        }
+        if (dbEmployees && dbEmployees.length > 0) {
+          setEmployees(dbEmployees);
+        }
+      } catch (err) {
+        console.error('Failed to load from Supabase, using local data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadFromDB();
+  }, []);
 
   // Simulate real-time data updates
   useEffect(() => {
@@ -382,7 +486,6 @@ export const DataProvider = ({ children }) => {
         const updated = { ...prev };
         Object.keys(updated).forEach(key => {
           if (updated[key].status === 'running') {
-            // Simulate small fluctuations
             const speedVariation = (Math.random() - 0.5) * 2;
             const tempVariation = (Math.random() - 0.5) * 1;
             updated[key] = {
@@ -394,7 +497,7 @@ export const DataProvider = ({ children }) => {
         });
         return updated;
       });
-    }, 30000); // Update every 30 seconds instead of 3 seconds
+    }, 30000);
 
     return () => clearInterval(interval);
   }, []);
@@ -479,6 +582,134 @@ export const DataProvider = ({ children }) => {
     };
   }, [getMachinesBySection]);
 
+  // ===== CRUD Operations (Supabase-backed) =====
+
+  // Add a new machine
+  const addNewMachine = useCallback(async (machine) => {
+    if (dbConnected) {
+      try {
+        await addMachineDB(machine);
+      } catch (err) {
+        console.error('DB add failed:', err);
+        throw err;
+      }
+    }
+    setMachines(prev => ({ ...prev, [machine.id]: machine }));
+  }, [dbConnected]);
+
+  // Update a machine
+  const updateMachineData = useCallback(async (id, updates) => {
+    if (dbConnected) {
+      try {
+        await updateMachineDB(id, updates);
+      } catch (err) {
+        console.error('DB update failed:', err);
+        throw err;
+      }
+    }
+    setMachines(prev => ({
+      ...prev,
+      [id]: { ...prev[id], ...updates }
+    }));
+  }, [dbConnected]);
+
+  // Delete a machine
+  const removeMachine = useCallback(async (id) => {
+    if (dbConnected) {
+      try {
+        await deleteMachineDB(id);
+      } catch (err) {
+        console.error('DB delete failed:', err);
+        throw err;
+      }
+    }
+    setMachines(prev => {
+      const updated = { ...prev };
+      delete updated[id];
+      return updated;
+    });
+  }, [dbConnected]);
+
+  // Spare Parts CRUD
+  const getSparePartsForMachine = useCallback(async (machineId) => {
+    if (dbConnected) {
+      return await fetchSparePartsByMachine(machineId);
+    }
+    return [];
+  }, [dbConnected]);
+
+  const addSparePart = useCallback(async (part) => {
+    if (dbConnected) {
+      return await addSparePartDB(part);
+    }
+    return null;
+  }, [dbConnected]);
+
+  const updateSparePart = useCallback(async (id, updates) => {
+    if (dbConnected) {
+      return await updateSparePartDB(id, updates);
+    }
+    return null;
+  }, [dbConnected]);
+
+  const removeSparePart = useCallback(async (id) => {
+    if (dbConnected) {
+      return await deleteSparePartDB(id);
+    }
+    return null;
+  }, [dbConnected]);
+
+  // ===== Employee CRUD =====
+  const addNewEmployee = useCallback(async (employee) => {
+    if (dbConnected) {
+      try {
+        const result = await addEmployeeDB(employee);
+        if (result) { setEmployees(prev => [...prev, result]); return result; }
+      } catch (err) { console.error('DB add employee failed:', err); throw err; }
+    }
+    const local = { ...employee, id: `local-${Date.now()}` };
+    setEmployees(prev => [...prev, local]);
+    return local;
+  }, [dbConnected]);
+
+  const updateEmployeeData = useCallback(async (id, updates) => {
+    if (dbConnected) {
+      try {
+        const result = await updateEmployeeDB(id, updates);
+        if (result) { setEmployees(prev => prev.map(e => e.id === id ? result : e)); return result; }
+      } catch (err) { console.error('DB update employee failed:', err); throw err; }
+    }
+    setEmployees(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
+  }, [dbConnected]);
+
+  const removeEmployee = useCallback(async (id) => {
+    if (dbConnected) {
+      try { await deleteEmployeeDB(id); } catch (err) { console.error('DB delete employee failed:', err); throw err; }
+    }
+    setEmployees(prev => prev.filter(e => e.id !== id));
+  }, [dbConnected]);
+
+  const reloadEmployees = useCallback(async () => {
+    if (!isSupabaseConfigured()) return;
+    try {
+      const dbEmployees = await fetchEmployeesFromDB();
+      if (dbEmployees && dbEmployees.length > 0) setEmployees(dbEmployees);
+    } catch (err) { console.error('Failed to reload employees:', err); }
+  }, []);
+
+  // Reload machines from database
+  const reloadMachines = useCallback(async () => {
+    if (!isSupabaseConfigured()) return;
+    try {
+      const dbMachines = await fetchMachinesFromDB();
+      if (dbMachines && Object.keys(dbMachines).length > 0) {
+        setMachines(dbMachines);
+      }
+    } catch (err) {
+      console.error('Failed to reload machines:', err);
+    }
+  }, []);
+
   const value = {
     machines,
     workOrders,
@@ -497,6 +728,9 @@ export const DataProvider = ({ children }) => {
     machineStatusData,
     kpiData,
     rainImpactData,
+    machineTypes,
+    dbConnected,
+    loading,
     setMachines,
     setWorkOrders,
     setMaintenance,
@@ -510,6 +744,21 @@ export const DataProvider = ({ children }) => {
     getMachinesBySection,
     getMachineStats,
     getSectionStats,
+    // CRUD operations
+    addNewMachine,
+    updateMachineData,
+    removeMachine,
+    getSparePartsForMachine,
+    addSparePart,
+    updateSparePart,
+    removeSparePart,
+    reloadMachines,
+    // Employee operations
+    employees,
+    addNewEmployee,
+    updateEmployeeData,
+    removeEmployee,
+    reloadEmployees,
   };
 
   return (

@@ -1,0 +1,15 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "saudi-cable-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start"],
+      "port": 3005,
+      "cwd": "frontend",
+      "env": {
+        "PORT": "3005"
+      }
+    }
+  ]
+}

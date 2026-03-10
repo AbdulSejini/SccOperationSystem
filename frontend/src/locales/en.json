@@ -22,6 +22,14 @@
     "warning": "Warning",
     "info": "Information"
   },
+  "departments": {
+    "production": "Production",
+    "productionDesc": "Factory operations, production lines, and capacity management",
+    "maintenance": "Maintenance",
+    "maintenanceDesc": "Equipment maintenance, checklists, and PM schedules",
+    "planning": "Planning",
+    "planningDesc": "Analytics, quality control, and workforce management"
+  },
   "nav": {
     "home": "Home",
     "factoryLayout": "Factory Layout",
@@ -34,7 +42,11 @@
     "qualityControl": "Quality Control",
     "scrapManagement": "Scrap Management",
     "workforceManagement": "Workforce",
-    "analytics": "Analytics"
+    "analytics": "Analytics",
+    "machineManagement": "Machine Management",
+    "machineProfiles": "Machine Profiles",
+    "maintenanceChecklist": "Maintenance Checklist",
+    "pmSchedule": "PM Schedule"
   },
   "header": {
     "title": "Saudi Cable Company",
@@ -154,7 +166,38 @@
     "training": "Training",
     "certified": "Certified",
     "inTraining": "In Training",
-    "attendance": "Attendance"
+    "attendance": "Attendance",
+    "employees": "Employees",
+    "addEmployee": "Add Employee",
+    "editEmployee": "Edit Employee",
+    "employeeId": "Badge No",
+    "nameEn": "Name (English)",
+    "nameAr": "Name (Arabic)",
+    "department": "Department",
+    "role": "Role",
+    "section": "Section",
+    "shift": "Shift",
+    "phone": "Phone",
+    "status": "Status",
+    "assignedMachine": "Assigned Machine",
+    "production": "Production",
+    "maintenance": "Maintenance",
+    "operator": "Operator",
+    "supervisor": "Supervisor",
+    "engineer": "Engineer",
+    "technician": "Technician",
+    "active": "Active",
+    "inactive": "Inactive",
+    "onLeave": "On Leave",
+    "morning": "Morning",
+    "evening": "Evening",
+    "night": "Night",
+    "noEmployees": "No employees found",
+    "confirmDelete": "Are you sure you want to delete this employee?",
+    "productionWorkers": "Production Workers",
+    "maintenanceWorkers": "Maintenance Workers",
+    "activeEmployees": "Active Employees",
+    "onLeaveCount": "On Leave"
   },
   "kpi": {
     "oee": "Overall Equipment Effectiveness",

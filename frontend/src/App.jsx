@@ -12,17 +12,24 @@ import Header from './components/Layout/Header';
 import MobileNav from './components/Layout/MobileNav';
 
 // Pages
-import Home from './pages/Home';
-import FactoryView from './pages/FactoryView';
-import CapacityPlanning from './pages/CapacityPlanning';
-import Scheduling from './pages/Scheduling';
-import ShopFloor from './pages/ShopFloor';
-import Maintenance from './pages/Maintenance';
-import Quality from './pages/Quality';
-import Scrap from './pages/Scrap';
-import Workforce from './pages/Workforce';
-import Analytics from './pages/Analytics';
-import Settings from './pages/Settings';
+import DepartmentHome from './pages/DepartmentHome';
+import DisabledPage from './pages/DisabledPage';
+import MachineProfiles from './pages/MachineProfiles';
+import MachineProfileDetail from './pages/MachineProfileDetail';
+// import Home from './pages/Home';
+// import FactoryView from './pages/FactoryView';
+// import CapacityPlanning from './pages/CapacityPlanning';
+// import Scheduling from './pages/Scheduling';
+// import ShopFloor from './pages/ShopFloor';
+// import Maintenance from './pages/Maintenance';
+// import Quality from './pages/Quality';
+// import Scrap from './pages/Scrap';
+// import Workforce from './pages/Workforce';
+// import Analytics from './pages/Analytics';
+// import Settings from './pages/Settings';
+// import MachineManagement from './pages/MachineManagement';
+// import MaintenanceChecklist from './pages/MaintenanceChecklist';
+// import PMSchedule from './pages/PMSchedule';
 
 // Page Wrapper for Animations
 const PageWrapper = ({ children }) => (
@@ -36,7 +43,7 @@ const PageWrapper = ({ children }) => (
   </motion.div>
 );
 
-// Main Layout with Sidebar and Header
+// Main Layout with Sidebar and Header (for department pages)
 const MainLayout = ({ children }) => {
   const { t, isRTL } = useLanguage();
   const location = useLocation();
@@ -55,6 +62,10 @@ const MainLayout = ({ children }) => {
       scrapManagement: t('nav.scrapManagement'),
       workforceManagement: t('nav.workforceManagement'),
       analytics: t('nav.analytics'),
+      machineManagement: t('nav.machineManagement') || 'Machine Management',
+      maintenanceChecklist: t('nav.maintenanceChecklist') || 'Maintenance Checklist',
+      pmSchedule: t('nav.pmSchedule') || 'PM Schedule',
+      machineProfiles: t('nav.machineProfiles') || 'Machine Profiles',
       settings: t('common.settings'),
     };
     return titles[path] || t('header.title');
@@ -91,21 +102,11 @@ const App = () => {
         <LanguageProvider>
           <DataProvider>
             <Routes>
-            {/* Public Routes - No Login Required */}
-            <Route path="/" element={<MainLayout><Home /></MainLayout>} />
-            <Route path="/factoryLayout" element={<MainLayout><FactoryView /></MainLayout>} />
-            <Route path="/capacityPlanning" element={<MainLayout><CapacityPlanning /></MainLayout>} />
-            <Route path="/scheduling" element={<MainLayout><Scheduling /></MainLayout>} />
-            <Route path="/shopFloor" element={<MainLayout><ShopFloor /></MainLayout>} />
-            <Route path="/maintenanceDashboard" element={<MainLayout><Maintenance /></MainLayout>} />
-            <Route path="/qualityControl" element={<MainLayout><Quality /></MainLayout>} />
-            <Route path="/scrapManagement" element={<MainLayout><Scrap /></MainLayout>} />
-            <Route path="/workforceManagement" element={<MainLayout><Workforce /></MainLayout>} />
-            <Route path="/analytics" element={<MainLayout><Analytics /></MainLayout>} />
-            <Route path="/settings" element={<MainLayout><Settings /></MainLayout>} />
-
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+              {/* Machine Profiles */}
+              <Route path="/machineProfiles" element={<MainLayout><MachineProfiles /></MainLayout>} />
+              <Route path="/machineProfiles/:machineId" element={<MainLayout><MachineProfileDetail /></MainLayout>} />
+              {/* All other pages disabled */}
+              <Route path="*" element={<DisabledPage />} />
             </Routes>
           </DataProvider>
         </LanguageProvider>

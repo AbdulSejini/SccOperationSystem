@@ -1,6 +1,6 @@
 /**
  * Mobile Bottom Navigation Component
- * Shows only on mobile devices (< 768px)
+ * Shows only on mobile devices (< 768px) - Grouped by Department
  */
 
 import React, { useState } from 'react';
@@ -22,30 +22,60 @@ import {
   Users,
   LayoutDashboard,
   Settings,
+  Database,
+  ClipboardList,
+  CalendarDays,
+  Grid3X3,
 } from 'lucide-react';
 
-// All menu items for the expanded menu
-const allMenuItems = [
-  { id: 'home', icon: Home, path: '/', labelEn: 'Home', labelAr: 'الرئيسية' },
-  { id: 'factoryLayout', icon: Map, path: '/factoryLayout', labelEn: 'Factory', labelAr: 'المصنع' },
-  { id: 'capacityPlanning', icon: BarChart3, path: '/capacityPlanning', labelEn: 'Capacity', labelAr: 'الطاقة' },
-  { id: 'scheduling', icon: Calendar, path: '/scheduling', labelEn: 'Schedule', labelAr: 'الجدولة' },
-  { id: 'shopFloor', icon: Factory, path: '/shopFloor', labelEn: 'Shop Floor', labelAr: 'أرضية الإنتاج' },
-  { id: 'maintenanceDashboard', icon: Wrench, path: '/maintenanceDashboard', labelEn: 'Maintenance', labelAr: 'الصيانة' },
-  { id: 'qualityControl', icon: CheckCircle, path: '/qualityControl', labelEn: 'Quality', labelAr: 'الجودة' },
-  { id: 'scrapManagement', icon: Trash2, path: '/scrapManagement', labelEn: 'Scrap', labelAr: 'السكراب' },
-  { id: 'workforceManagement', icon: Users, path: '/workforceManagement', labelEn: 'Workforce', labelAr: 'القوى العاملة' },
-  { id: 'analytics', icon: LayoutDashboard, path: '/analytics', labelEn: 'Analytics', labelAr: 'التحليلات' },
-  { id: 'settings', icon: Settings, path: '/settings', labelEn: 'Settings', labelAr: 'الإعدادات' },
+// Department grouped menu items
+const departmentMenus = [
+  {
+    id: 'production',
+    color: '#10B981',
+    items: [
+      { id: 'home', icon: Home, path: '/', labelEn: 'Dashboard', labelAr: 'الرئيسية' },
+      { id: 'factoryLayout', icon: Map, path: '/factoryLayout', labelEn: 'Factory', labelAr: 'المصنع' },
+      { id: 'shopFloor', icon: Factory, path: '/shopFloor', labelEn: 'Shop Floor', labelAr: 'صالة الإنتاج' },
+      { id: 'capacityPlanning', icon: BarChart3, path: '/capacityPlanning', labelEn: 'Capacity', labelAr: 'الطاقة' },
+      { id: 'scheduling', icon: Calendar, path: '/scheduling', labelEn: 'Schedule', labelAr: 'الجدولة' },
+    ],
+  },
+  {
+    id: 'maintenance',
+    color: '#F39200',
+    items: [
+      { id: 'maintenanceDashboard', icon: Wrench, path: '/maintenanceDashboard', labelEn: 'Maintenance', labelAr: 'الصيانة' },
+      { id: 'machineManagement', icon: Database, path: '/machineManagement', labelEn: 'Machines', labelAr: 'المكائن' },
+      { id: 'maintenanceChecklist', icon: ClipboardList, path: '/maintenanceChecklist', labelEn: 'Checklist', labelAr: 'الشيك ليست' },
+      { id: 'pmSchedule', icon: CalendarDays, path: '/pmSchedule', labelEn: 'PM Schedule', labelAr: 'جدول الصيانة' },
+    ],
+  },
+  {
+    id: 'planning',
+    color: '#3B82F6',
+    items: [
+      { id: 'analytics', icon: LayoutDashboard, path: '/analytics', labelEn: 'Analytics', labelAr: 'التحليلات' },
+      { id: 'qualityControl', icon: CheckCircle, path: '/qualityControl', labelEn: 'Quality', labelAr: 'الجودة' },
+      { id: 'scrapManagement', icon: Trash2, path: '/scrapManagement', labelEn: 'Scrap', labelAr: 'السكراب' },
+      { id: 'workforceManagement', icon: Users, path: '/workforceManagement', labelEn: 'Workforce', labelAr: 'القوى العاملة' },
+    ],
+  },
 ];
 
-// Main 4 items for bottom bar (most used)
+// Main 4 items for bottom bar
 const mainMenuItems = [
-  { id: 'home', icon: Home, path: '/', labelEn: 'Home', labelAr: 'الرئيسية' },
-  { id: 'factoryLayout', icon: Map, path: '/factoryLayout', labelEn: 'Factory', labelAr: 'المصنع' },
+  { id: 'departments', icon: Grid3X3, path: '/departments', labelEn: 'Departments', labelAr: 'الأقسام' },
+  { id: 'home', icon: Home, path: '/', labelEn: 'Dashboard', labelAr: 'الرئيسية' },
   { id: 'maintenanceDashboard', icon: Wrench, path: '/maintenanceDashboard', labelEn: 'Maintenance', labelAr: 'الصيانة' },
   { id: 'analytics', icon: LayoutDashboard, path: '/analytics', labelEn: 'Analytics', labelAr: 'التحليلات' },
 ];
+
+const deptLabels = {
+  production: { en: 'Production', ar: 'الإنتاج' },
+  maintenance: { en: 'Maintenance', ar: 'الصيانة' },
+  planning: { en: 'Planning', ar: 'التخطيط' },
+};
 
 const MobileNav = () => {
   const { isRTL } = useLanguage();
@@ -63,7 +93,7 @@ const MobileNav = () => {
 
   return (
     <>
-      {/* Bottom Navigation Bar - Fixed at bottom on mobile */}
+      {/* Bottom Navigation Bar */}
       <nav
         className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
         style={{
@@ -77,7 +107,6 @@ const MobileNav = () => {
         }}
       >
         <div className="flex items-center justify-around px-2 py-2">
-          {/* Main Menu Items */}
           {mainMenuItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentPath === item.path;
@@ -124,7 +153,6 @@ const MobileNav = () => {
       <AnimatePresence>
         {isMenuOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -133,7 +161,6 @@ const MobileNav = () => {
               onClick={() => setIsMenuOpen(false)}
             />
 
-            {/* Menu Panel */}
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
@@ -144,15 +171,12 @@ const MobileNav = () => {
                 background: isDark
                   ? 'linear-gradient(180deg, #2E2D2C 0%, #1A1918 100%)'
                   : 'linear-gradient(180deg, #FFFFFF 0%, #F5F5F5 100%)',
-                maxHeight: '80vh',
+                maxHeight: '85vh',
               }}
             >
               {/* Handle */}
               <div className="flex justify-center pt-3 pb-2">
-                <div
-                  className="w-12 h-1 rounded-full"
-                  style={{ background: colors.border }}
-                />
+                <div className="w-12 h-1 rounded-full" style={{ background: colors.border }} />
               </div>
 
               {/* Header */}
@@ -170,40 +194,75 @@ const MobileNav = () => {
                 </motion.button>
               </div>
 
-              {/* Menu Items Grid */}
-              <div className="p-4 overflow-y-auto" style={{ maxHeight: 'calc(80vh - 100px)' }}>
-                <div className="grid grid-cols-3 gap-3">
-                  {allMenuItems.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = currentPath === item.path;
+              {/* Menu Items by Department */}
+              <div className="p-4 overflow-y-auto" style={{ maxHeight: 'calc(85vh - 100px)' }}>
+                {departmentMenus.map((dept) => (
+                  <div key={dept.id} className="mb-4">
+                    {/* Department Label */}
+                    <div className="flex items-center gap-2 mb-2 px-1">
+                      <div className="w-2 h-2 rounded-full" style={{ background: dept.color }} />
+                      <span className="text-xs font-bold uppercase tracking-wider" style={{ color: dept.color }}>
+                        {isRTL ? deptLabels[dept.id].ar : deptLabels[dept.id].en}
+                      </span>
+                    </div>
 
-                    return (
-                      <motion.button
-                        key={item.id}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => handleNavigate(item.path)}
-                        className="flex flex-col items-center justify-center p-4 rounded-2xl"
-                        style={isActive ? {
-                          background: 'linear-gradient(135deg, #F39200 0%, #CC7A00 100%)',
-                          boxShadow: '0 4px 14px rgba(243, 146, 0, 0.35)',
-                        } : {
-                          background: colors.bgTertiary,
-                        }}
-                      >
-                        <Icon
-                          className="w-6 h-6 mb-2"
-                          style={{ color: isActive ? '#FFFFFF' : '#F39200' }}
-                        />
-                        <span
-                          className="text-xs font-medium text-center"
-                          style={{ color: isActive ? '#FFFFFF' : colors.textPrimary }}
-                        >
-                          {isRTL ? item.labelAr : item.labelEn}
-                        </span>
-                      </motion.button>
-                    );
-                  })}
-                </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {dept.items.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = currentPath === item.path;
+
+                        return (
+                          <motion.button
+                            key={item.id}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleNavigate(item.path)}
+                            className="flex flex-col items-center justify-center p-3 rounded-2xl"
+                            style={isActive ? {
+                              background: `linear-gradient(135deg, ${dept.color} 0%, ${dept.color}CC 100%)`,
+                              boxShadow: `0 4px 14px ${dept.color}59`,
+                            } : {
+                              background: colors.bgTertiary,
+                            }}
+                          >
+                            <Icon
+                              className="w-5 h-5 mb-1.5"
+                              style={{ color: isActive ? '#FFFFFF' : dept.color }}
+                            />
+                            <span
+                              className="text-[11px] font-medium text-center leading-tight"
+                              style={{ color: isActive ? '#FFFFFF' : colors.textPrimary }}
+                            >
+                              {isRTL ? item.labelAr : item.labelEn}
+                            </span>
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Settings */}
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleNavigate('/settings')}
+                  className="w-full flex items-center justify-center gap-2 p-3 rounded-2xl mt-2"
+                  style={{
+                    background: currentPath === '/settings'
+                      ? 'linear-gradient(135deg, #F39200 0%, #CC7A00 100%)'
+                      : colors.bgTertiary,
+                  }}
+                >
+                  <Settings
+                    className="w-5 h-5"
+                    style={{ color: currentPath === '/settings' ? '#FFFFFF' : colors.textMuted }}
+                  />
+                  <span
+                    className="text-sm font-medium"
+                    style={{ color: currentPath === '/settings' ? '#FFFFFF' : colors.textPrimary }}
+                  >
+                    {isRTL ? 'الإعدادات' : 'Settings'}
+                  </span>
+                </motion.button>
               </div>
             </motion.div>
           </>

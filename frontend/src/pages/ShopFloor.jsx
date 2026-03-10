@@ -3,45 +3,26 @@
  * Digital operator interface for shop floor monitoring
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
-import { productionService, machineService } from '../services';
+import { useData } from '../context/DataContext';
 
 const ShopFloor = () => {
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
   const { isDark, colors } = useTheme();
-  const [loading, setLoading] = useState(false);
+  const { machines: machinesObj } = useData();
   const [activeSection, setActiveSection] = useState(null);
   const [productionLogs, setProductionLogs] = useState([]);
   const [downtimeLogs, setDowntimeLogs] = useState([]);
-  const [machines, setMachines] = useState([]);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Convert machines object to array for dropdowns
+  const machines = Object.values(machinesObj || {}).sort((a, b) => a.id.localeCompare(b.id));
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [machineData, productionData, downtimeData] = await Promise.all([
-        machineService.getMachines(),
-        productionService.getProductionLogs({ limit: 10 }),
-        productionService.getDowntimeLogs({ limit: 10 }),
-      ]);
-      setMachines(machineData || []);
-      setProductionLogs(productionData || []);
-      setDowntimeLogs(downtimeData || []);
-    } catch (error) {
-      console.error('Error loading shop floor data:', error);
-      // Use fallback data for demo
-      setMachines([]);
-      setProductionLogs([]);
-      setDowntimeLogs([]);
-    } finally {
-      setLoading(false);
-    }
+  const loadData = () => {
+    // machines already loaded from DataContext
+    // production/downtime logs would come from Supabase in the future
   };
 
   const sections = [
@@ -167,7 +148,8 @@ const ProductionLogSection = ({ logs, machines, onRefresh, colors, isDark }) => 
     e.preventDefault();
     setSubmitting(true);
     try {
-      await productionService.createProductionLog({
+      // TODO: integrate with Supabase production_logs table
+      console.log('Production log submitted:', {
         ...formData,
         output_quantity: parseFloat(formData.output_quantity),
       });
@@ -212,7 +194,7 @@ const ProductionLogSection = ({ logs, machines, onRefresh, colors, isDark }) => 
           >
             <option value="" style={{ background: isDark ? '#1F2937' : '#FFFFFF' }}>Select Machine</option>
             {machines.map((m) => (
-              <option key={m.id} value={m.id} style={{ background: isDark ? '#1F2937' : '#FFFFFF' }}>{m.name} ({m.code})</option>
+              <option key={m.id} value={m.id} style={{ background: isDark ? '#1F2937' : '#FFFFFF' }}>{m.id} - {m.name}</option>
             ))}
           </select>
         </div>
@@ -346,7 +328,7 @@ const DowntimeSection = ({ logs, machines, onRefresh, colors, isDark }) => {
           >
             <option value="" style={{ background: isDark ? '#1F2937' : '#FFFFFF' }}>Select Machine</option>
             {machines.map((m) => (
-              <option key={m.id} value={m.id} style={{ background: isDark ? '#1F2937' : '#FFFFFF' }}>{m.name} ({m.code})</option>
+              <option key={m.id} value={m.id} style={{ background: isDark ? '#1F2937' : '#FFFFFF' }}>{m.id} - {m.name}</option>
             ))}
           </select>
         </div>
@@ -474,7 +456,7 @@ const QualityCheckSection = ({ machines, colors, isDark }) => {
           >
             <option value="" style={{ background: isDark ? '#1F2937' : '#FFFFFF' }}>Select Machine</option>
             {machines.map((m) => (
-              <option key={m.id} value={m.id} style={{ background: isDark ? '#1F2937' : '#FFFFFF' }}>{m.name} ({m.code})</option>
+              <option key={m.id} value={m.id} style={{ background: isDark ? '#1F2937' : '#FFFFFF' }}>{m.id} - {m.name}</option>
             ))}
           </select>
         </div>

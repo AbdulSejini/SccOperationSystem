@@ -22,6 +22,14 @@
     "warning": "تحذير",
     "info": "معلومات"
   },
+  "departments": {
+    "production": "الإنتاج",
+    "productionDesc": "عمليات المصنع وخطوط الإنتاج وإدارة الطاقة الإنتاجية",
+    "maintenance": "الصيانة",
+    "maintenanceDesc": "صيانة المعدات وقوائم الفحص وجداول الصيانة الوقائية",
+    "planning": "التخطيط",
+    "planningDesc": "التحليلات ومراقبة الجودة وإدارة القوى العاملة"
+  },
   "nav": {
     "home": "الرئيسية",
     "factoryLayout": "مخطط المصنع",
@@ -34,7 +42,11 @@
     "qualityControl": "مراقبة الجودة",
     "scrapManagement": "إدارة السكراب",
     "workforceManagement": "إدارة القوى العاملة",
-    "analytics": "التحليلات"
+    "analytics": "التحليلات",
+    "machineManagement": "إدارة المكائن",
+    "machineProfiles": "بروفايلات الآلات",
+    "maintenanceChecklist": "شيك ليست الصيانة",
+    "pmSchedule": "جدول الصيانة السنوي"
   },
   "header": {
     "title": "شركة الكابلات السعودية",
@@ -154,7 +166,38 @@
     "training": "التدريب",
     "certified": "معتمد",
     "inTraining": "قيد التدريب",
-    "attendance": "الحضور"
+    "attendance": "الحضور",
+    "employees": "الموظفين",
+    "addEmployee": "إضافة موظف",
+    "editEmployee": "تعديل موظف",
+    "employeeId": "الرقم الوظيفي",
+    "nameEn": "الاسم (إنجليزي)",
+    "nameAr": "الاسم (عربي)",
+    "department": "القسم",
+    "role": "الدور",
+    "section": "الوحدة",
+    "shift": "الوردية",
+    "phone": "الهاتف",
+    "status": "الحالة",
+    "assignedMachine": "الماكينة المعينة",
+    "production": "الإنتاج",
+    "maintenance": "الصيانة",
+    "operator": "مشغل",
+    "supervisor": "مشرف",
+    "engineer": "مهندس",
+    "technician": "فني",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "onLeave": "في إجازة",
+    "morning": "صباحية",
+    "evening": "مسائية",
+    "night": "ليلية",
+    "noEmployees": "لا يوجد موظفين",
+    "confirmDelete": "هل أنت متأكد من حذف هذا الموظف؟",
+    "productionWorkers": "عمال الإنتاج",
+    "maintenanceWorkers": "عمال الصيانة",
+    "activeEmployees": "الموظفين النشطين",
+    "onLeaveCount": "في إجازة"
   },
   "kpi": {
     "oee": "الفعالية الكلية للمعدات",

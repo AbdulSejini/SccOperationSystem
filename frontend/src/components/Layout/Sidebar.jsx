@@ -1,6 +1,6 @@
 /**
  * Sidebar Component
- * Saudi Cable Company Dashboard Navigation - Light/Dark Mode Theme
+ * Saudi Cable Company Dashboard Navigation - Grouped by Department
  */
 
 import React, { useState } from 'react';
@@ -21,19 +21,20 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Home,
   ClipboardList,
+  Database,
+  CalendarDays,
+  ArrowLeft,
+  ArrowRight,
+  Home,
+  BarChart2,
 } from 'lucide-react';
 
 // Saudi Cable Logo Component (Cable Cross-Section Design - 7 Conductors)
 const SaudiCableLogo = ({ size = 48 }) => (
   <svg viewBox="0 0 60 60" width={size} height={size}>
-    {/* Main circle - dark background */}
     <circle cx="30" cy="30" r="28" fill="#2E2D2C" />
-    {/* Cable conductors - 7 orange circles arranged in hexagonal pattern */}
-    {/* Center circle */}
     <circle cx="30" cy="30" r="5.5" fill="#F39200" stroke="#FFF" strokeWidth="1" />
-    {/* Outer ring - 6 circles */}
     <circle cx="30" cy="17" r="5.5" fill="#F39200" stroke="#FFF" strokeWidth="1" />
     <circle cx="41.3" cy="23.5" r="5.5" fill="#F39200" stroke="#FFF" strokeWidth="1" />
     <circle cx="41.3" cy="36.5" r="5.5" fill="#F39200" stroke="#FFF" strokeWidth="1" />
@@ -43,18 +44,48 @@ const SaudiCableLogo = ({ size = 48 }) => (
   </svg>
 );
 
-const menuItems = [
-  { id: 'home', icon: Home, path: '/' },
-  { id: 'factoryLayout', icon: Map, path: '/factoryLayout' },
-  { id: 'capacityPlanning', icon: BarChart3, path: '/capacityPlanning' },
-  { id: 'scheduling', icon: Calendar, path: '/scheduling' },
-  { id: 'shopFloor', icon: Factory, path: '/shopFloor' },
-  { id: 'maintenanceDashboard', icon: Wrench, path: '/maintenanceDashboard' },
-  { id: 'qualityControl', icon: CheckCircle, path: '/qualityControl' },
-  { id: 'scrapManagement', icon: Trash2, path: '/scrapManagement' },
-  { id: 'workforceManagement', icon: Users, path: '/workforceManagement' },
-  { id: 'analytics', icon: LayoutDashboard, path: '/analytics' },
-];
+// Department definitions with their pages
+const departmentMenus = {
+  production: {
+    color: '#10B981',
+    items: [
+      { id: 'home', icon: Home, path: '/' },
+      { id: 'factoryLayout', icon: Map, path: '/factoryLayout' },
+      { id: 'shopFloor', icon: Factory, path: '/shopFloor' },
+      { id: 'capacityPlanning', icon: BarChart3, path: '/capacityPlanning' },
+      { id: 'scheduling', icon: Calendar, path: '/scheduling' },
+    ],
+  },
+  maintenance: {
+    color: '#F39200',
+    items: [
+      { id: 'maintenanceDashboard', icon: Wrench, path: '/maintenanceDashboard' },
+      { id: 'machineManagement', icon: Database, path: '/machineManagement' },
+      { id: 'machineProfiles', icon: BarChart2, path: '/machineProfiles' },
+      { id: 'maintenanceChecklist', icon: ClipboardList, path: '/maintenanceChecklist' },
+      { id: 'pmSchedule', icon: CalendarDays, path: '/pmSchedule' },
+    ],
+  },
+  planning: {
+    color: '#3B82F6',
+    items: [
+      { id: 'analytics', icon: LayoutDashboard, path: '/analytics' },
+      { id: 'qualityControl', icon: CheckCircle, path: '/qualityControl' },
+      { id: 'scrapManagement', icon: Trash2, path: '/scrapManagement' },
+      { id: 'workforceManagement', icon: Users, path: '/workforceManagement' },
+    ],
+  },
+};
+
+// Determine which department owns the current route
+const getDepartmentForPath = (path) => {
+  for (const [deptId, dept] of Object.entries(departmentMenus)) {
+    if (dept.items.some((item) => item.path === path)) {
+      return deptId;
+    }
+  }
+  return null;
+};
 
 const Sidebar = () => {
   const { t, isRTL } = useLanguage();
@@ -64,6 +95,9 @@ const Sidebar = () => {
   const location = useLocation();
 
   const currentPath = location.pathname;
+  const currentDept = getDepartmentForPath(currentPath);
+
+  const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
   return (
     <motion.aside
@@ -86,7 +120,9 @@ const Sidebar = () => {
         <div className="flex items-center gap-3">
           <motion.div
             whileHover={{ rotate: 10 }}
-            transition={{ type: "spring", stiffness: 300 }}
+            transition={{ type: 'spring', stiffness: 300 }}
+            className="cursor-pointer"
+            onClick={() => navigate('/departments')}
           >
             <SaudiCableLogo size={isCollapsed ? 40 : 48} />
           </motion.div>
@@ -110,68 +146,125 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 py-4 overflow-y-auto">
-        <ul className="space-y-1 px-3">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentPath === item.path || (item.path === '/' && currentPath === '/');
+      {/* Back to Departments Button */}
+      <div className="px-3 pt-3">
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => navigate('/departments')}
+          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all text-sm font-medium"
+          style={{
+            color: '#F39200',
+            background: isDark ? 'rgba(243, 146, 0, 0.1)' : 'rgba(243, 146, 0, 0.06)',
+            border: '1px solid rgba(243, 146, 0, 0.2)',
+          }}
+        >
+          <BackArrow className="w-4 h-4 flex-shrink-0" />
+          {!isCollapsed && (
+            <span>{isRTL ? 'الأقسام' : 'Departments'}</span>
+          )}
+        </motion.button>
+      </div>
 
-            return (
-              <li key={item.id}>
-                <motion.button
-                  whileHover={{ scale: 1.02, x: isRTL ? -4 : 4 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => navigate(item.path)}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200"
-                  style={isActive ? {
-                    background: 'linear-gradient(135deg, #F39200 0%, #CC7A00 100%)',
-                    boxShadow: '0 4px 14px rgba(243, 146, 0, 0.35)',
-                    color: '#FFFFFF'
-                  } : {
-                    color: colors.textSecondary,
-                    background: 'transparent'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.background = isDark
-                        ? 'rgba(243, 146, 0, 0.15)'
-                        : 'rgba(243, 146, 0, 0.08)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.background = 'transparent';
-                    }
-                  }}
-                >
-                  <Icon
-                    className="w-5 h-5 flex-shrink-0"
-                    style={{ color: isActive ? '#FFFFFF' : colors.textMuted }}
+      {/* Navigation - Grouped by Department */}
+      <nav className="flex-1 py-3 overflow-y-auto">
+        {Object.entries(departmentMenus).map(([deptId, dept]) => {
+          const isDeptActive = currentDept === deptId;
+
+          return (
+            <div key={deptId} className="mb-2">
+              {/* Department Header */}
+              {!isCollapsed && (
+                <div className="px-5 py-2 flex items-center gap-2">
+                  <div
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ background: dept.color }}
                   />
-                  <AnimatePresence>
-                    {!isCollapsed && (
-                      <motion.span
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="text-sm font-medium whitespace-nowrap"
+                  <span
+                    className="text-[10px] font-bold uppercase tracking-wider"
+                    style={{ color: isDeptActive ? dept.color : colors.textMuted }}
+                  >
+                    {t(`departments.${deptId}`)}
+                  </span>
+                </div>
+              )}
+
+              {/* Separator dot for collapsed */}
+              {isCollapsed && (
+                <div className="flex justify-center py-2">
+                  <div
+                    className="w-2 h-2 rounded-full"
+                    style={{ background: dept.color }}
+                  />
+                </div>
+              )}
+
+              {/* Menu Items */}
+              <ul className="space-y-0.5 px-3">
+                {dept.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = item.path === '/machineProfiles'
+                    ? currentPath.startsWith('/machineProfiles')
+                    : currentPath === item.path;
+
+                  return (
+                    <li key={item.id}>
+                      <motion.button
+                        whileHover={{ scale: 1.02, x: isRTL ? -4 : 4 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => navigate(item.path)}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200"
+                        style={isActive ? {
+                          background: `linear-gradient(135deg, ${dept.color} 0%, ${dept.color}CC 100%)`,
+                          boxShadow: `0 4px 14px ${dept.color}59`,
+                          color: '#FFFFFF',
+                        } : {
+                          color: colors.textSecondary,
+                          background: 'transparent',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isActive) {
+                            e.currentTarget.style.background = isDark
+                              ? `${dept.color}20`
+                              : `${dept.color}10`;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isActive) {
+                            e.currentTarget.style.background = 'transparent';
+                          }
+                        }}
                       >
-                        {t(`nav.${item.id}`)}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                  {isActive && !isCollapsed && (
-                    <motion.div
-                      layoutId="activeIndicator"
-                      className={`${isRTL ? 'mr-auto' : 'ml-auto'} w-2 h-2 rounded-full bg-white`}
-                    />
-                  )}
-                </motion.button>
-              </li>
-            );
-          })}
-        </ul>
+                        <Icon
+                          className="w-5 h-5 flex-shrink-0"
+                          style={{ color: isActive ? '#FFFFFF' : colors.textMuted }}
+                        />
+                        <AnimatePresence>
+                          {!isCollapsed && (
+                            <motion.span
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              className="text-sm font-medium whitespace-nowrap"
+                            >
+                              {t(`nav.${item.id}`)}
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
+                        {isActive && !isCollapsed && (
+                          <motion.div
+                            layoutId="activeIndicator"
+                            className={`${isRTL ? 'mr-auto' : 'ml-auto'} w-2 h-2 rounded-full bg-white`}
+                          />
+                        )}
+                      </motion.button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })}
       </nav>
 
       {/* Settings & Collapse */}
@@ -184,9 +277,9 @@ const Sidebar = () => {
           style={currentPath === '/settings' ? {
             background: 'linear-gradient(135deg, #F39200 0%, #CC7A00 100%)',
             boxShadow: '0 4px 14px rgba(243, 146, 0, 0.35)',
-            color: '#FFFFFF'
+            color: '#FFFFFF',
           } : {
-            color: colors.textSecondary
+            color: colors.textSecondary,
           }}
         >
           <Settings
@@ -220,7 +313,7 @@ const Sidebar = () => {
           className="p-4"
           style={{
             borderTop: `1px solid ${colors.border}`,
-            background: colors.bgSecondary
+            background: colors.bgSecondary,
           }}
         >
           <div className="text-center">
@@ -228,7 +321,7 @@ const Sidebar = () => {
               {isRTL ? 'نظام إدارة العمليات' : 'Operations Management System'}
             </p>
             <p className="text-xs font-semibold mt-1" style={{ color: '#F39200' }}>
-              v1.0.0
+              v2.0.0
             </p>
           </div>
         </div>
