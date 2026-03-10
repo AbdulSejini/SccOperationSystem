@@ -29,6 +29,8 @@ npm-debug.log*
 *.db
 *.sqlite3
 data/
+# Allow frontend src data (seed data - not a database data directory)
+!frontend/src/data/
 
 # Vercel
 .vercel/
